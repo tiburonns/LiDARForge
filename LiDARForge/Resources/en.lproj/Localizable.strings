@@ -73,7 +73,9 @@
 
 "export.ply" = "PLY";
 "export.share" = "Share";
-"export.ready" = "Sparse feature-point PLY is ready to share.";
+"export.ready" = "Point cloud PLY is ready to share.";
+"export.readyDense" = "Dense LiDAR SceneDepth PLY is ready to share.";
+"export.readySparse" = "LiDAR depth was unavailable; a sparse AR feature-point PLY is ready to share.";
 "export.failed" = "The point cloud could not be exported.";
 
 "settings.title" = "Settings";
