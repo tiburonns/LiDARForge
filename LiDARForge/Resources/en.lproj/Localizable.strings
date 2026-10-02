@@ -1,0 +1,63 @@
+"home.capture" = "Capture";
+"home.newProject" = "New Project";
+"home.tools" = "Tools";
+"home.sensorTools" = "Sensor Tools";
+"home.settings" = "Settings";
+
+"lidar.unsupported" = "This device does not report LiDAR scene-depth support. Sensor tools will be limited.";
+
+"project.object" = "Object";
+"project.object.subtitle" = "Objects, props, parts, furniture and vehicles.";
+"project.interior" = "Interior";
+"project.interior.subtitle" = "Rooms, walls, openings and indoor spaces.";
+"project.exterior" = "Exterior";
+"project.exterior.subtitle" = "Facades, yards, outdoor scenes and structures.";
+"project.building" = "Building";
+"project.building.subtitle" = "Multi-room and architectural capture.";
+"project.video" = "3D Video";
+"project.video.subtitle" = "RGB-D and spatial video capture foundation.";
+
+"stage.structure" = "Structure";
+"stage.structure.instruction" = "Capture the main shape, boundaries and scale. Move steadily and cover different heights.";
+"stage.detail" = "Detail";
+"stage.detail.instruction" = "Move closer to incomplete areas and add viewpoints around edges, recesses and occlusions.";
+"stage.appearance" = "Appearance";
+"stage.appearance.instruction" = "Capture clean visual coverage for textures. Avoid blur, hard glare and large exposure changes.";
+
+"sensor.camera" = "Camera";
+"sensor.cameraPoints" = "Points";
+"sensor.mesh" = "Mesh";
+"sensor.depth" = "Depth";
+"sensor.confidence" = "Confidence";
+"sensor.raw" = "Raw";
+"sensor.mode" = "Sensor view";
+
+"tool.nightVision" = "LiDAR Night View";
+"tool.depth" = "Depth View";
+"tool.confidence" = "Confidence Map";
+"tool.points" = "Feature Points";
+"tool.mesh" = "LiDAR Mesh";
+"tool.raw" = "Raw Sensor Inspector";
+
+"metric.coverage" = "Coverage";
+"metric.confidence" = "Confidence";
+"metric.mesh" = "Mesh";
+"metric.points" = "Points";
+"metric.tracking" = "Tracking";
+
+"scan.pause" = "Pause";
+"scan.resume" = "Resume";
+"scan.nextPass" = "Next pass";
+"scan.save" = "Save";
+"project.saved" = "Project snapshot saved";
+"common.ok" = "OK";
+
+"settings.title" = "Settings";
+"settings.language" = "Language";
+"settings.about" = "About";
+"settings.version" = "Version";
+"settings.processing" = "Processing";
+"settings.localFirst" = "Local-first";
+"language.system" = "System";
+"language.english" = "English";
+"language.spanish" = "Spanish";
