@@ -24,6 +24,7 @@ struct RoomPlanSummary {
     let openings: Int
     let objects: Int
     let floors: Int
+    let edgeCompleteness: Double
 }
 
 @MainActor
@@ -42,7 +43,8 @@ final class RoomPlanCaptureModel: ObservableObject {
             windows: room.windows.count,
             openings: room.openings.count,
             objects: room.objects.count,
-            floors: room.floors.count
+            floors: room.floors.count,
+            edgeCompleteness: edgeCompleteness(for: room)
         )
 
         planSegments =
@@ -86,6 +88,25 @@ final class RoomPlanCaptureModel: ObservableObject {
         planSegments = []
         exportURL = nil
         errorMessage = nil
+    }
+
+    private func edgeCompleteness(for room: CapturedRoom) -> Double {
+        let surfaces =
+            room.walls +
+            room.doors +
+            room.windows +
+            room.openings
+
+        guard !surfaces.isEmpty else { return 0 }
+
+        let completed = surfaces.reduce(0) {
+            $0 + $1.completedEdges.count
+        }
+        let possible =
+            surfaces.count * CapturedRoom.Surface.Edge.allCases.count
+
+        guard possible > 0 else { return 0 }
+        return min(Double(completed) / Double(possible), 1)
     }
 
     private func makeSegments(
@@ -226,6 +247,33 @@ struct RoomPlanProjectView: View {
             }
 
             if let summary = model.summary {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("roomplan.completeness")
+                            .font(.caption.bold())
+                        Spacer()
+                        Text(
+                            summary.edgeCompleteness.formatted(
+                                .percent.precision(.fractionLength(0))
+                            )
+                        )
+                        .font(.caption.bold().monospacedDigit())
+                    }
+
+                    ProgressView(value: summary.edgeCompleteness)
+
+                    Label(
+                        summary.edgeCompleteness >= 0.85
+                            ? "roomplan.completeness.good"
+                            : "roomplan.completeness.more",
+                        systemImage: summary.edgeCompleteness >= 0.85
+                            ? "checkmark.circle"
+                            : "arrow.triangle.2.circlepath"
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                }
+
                 Grid(horizontalSpacing: 16, verticalSpacing: 8) {
                     GridRow {
                         summaryMetric("roomplan.walls", summary.walls)
@@ -499,13 +547,29 @@ final class BuildingRoomPlanCaptureModel: ObservableObject {
     func addRoom(_ room: CapturedRoom) {
         rooms.append(room)
         roomCount = rooms.count
+        let structuralSurfaces =
+            room.walls +
+            room.doors +
+            room.windows +
+            room.openings
+        let completedEdges = structuralSurfaces.reduce(0) {
+            $0 + $1.completedEdges.count
+        }
+        let possibleEdges =
+            structuralSurfaces.count *
+            CapturedRoom.Surface.Edge.allCases.count
+        let completeness = possibleEdges > 0
+            ? min(Double(completedEdges) / Double(possibleEdges), 1)
+            : 0
+
         lastSummary = RoomPlanSummary(
             walls: room.walls.count,
             doors: room.doors.count,
             windows: room.windows.count,
             openings: room.openings.count,
             objects: room.objects.count,
-            floors: room.floors.count
+            floors: room.floors.count,
+            edgeCompleteness: completeness
         )
         roomReady = true
     }
@@ -683,6 +747,21 @@ struct BuildingRoomPlanProjectView: View {
             .font(.headline)
 
             if let summary = model.lastSummary {
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack {
+                        Text("roomplan.completeness")
+                            .font(.caption)
+                        Spacer()
+                        Text(
+                            summary.edgeCompleteness.formatted(
+                                .percent.precision(.fractionLength(0))
+                            )
+                        )
+                        .font(.caption.bold().monospacedDigit())
+                    }
+                    ProgressView(value: summary.edgeCompleteness)
+                }
+
                 HStack {
                     compactMetric("roomplan.walls", summary.walls)
                     compactMetric("roomplan.doors", summary.doors)
