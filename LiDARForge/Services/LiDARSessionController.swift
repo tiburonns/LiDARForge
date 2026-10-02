@@ -79,16 +79,23 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var recommendedReady = false
     @Published private(set) var accumulatedPointCount = 0
     @Published private(set) var densePointCount = 0
+    @Published private(set) var targetLocked = false
+    @Published private(set) var targetDistanceMeters: Double?
+    @Published private(set) var targetRadiusMeters: Double = 0.75
+    @Published private(set) var coverageSectors = Array(repeating: 0.0, count: 24)
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
     private var profile = CaptureProfile.sensor
+    private var projectType: ProjectType?
     private var orientationBins = Set<String>()
     private var spatialCells = Set<String>()
     private var pointKeys = Set<PointKey>()
     private var pointCloudPoints: [SIMD3<Float>] = []
     private var densePointKeys = Set<PointKey>()
     private var densePointCloudPoints: [SIMD3<Float>] = []
+    private var targetPosition: SIMD3<Float>?
+    private var coverageSectorHits = Array(repeating: 0, count: 24)
     private var startedAt = Date()
     private var lastPosition: SIMD3<Float>?
     private var lastTimestamp: TimeInterval?
@@ -101,7 +108,34 @@ final class LiDARSessionController: ObservableObject {
     }
 
     func configure(for projectType: ProjectType) {
+        self.projectType = projectType
         profile = projectType.captureProfile
+        targetRadiusMeters = projectType == .object ? 0.75 : 1.50
+    }
+
+    func lockTarget(position: SIMD3<Float>, cameraPosition: SIMD3<Float>?) {
+        targetPosition = position
+        targetLocked = true
+        coverageSectorHits = Array(repeating: 0, count: 24)
+        coverageSectors = Array(repeating: 0, count: 24)
+
+        if let cameraPosition {
+            targetDistanceMeters = Double(simd_distance(position, cameraPosition))
+        } else {
+            targetDistanceMeters = nil
+        }
+    }
+
+    func clearTarget() {
+        targetPosition = nil
+        targetLocked = false
+        targetDistanceMeters = nil
+        coverageSectorHits = Array(repeating: 0, count: 24)
+        coverageSectors = Array(repeating: 0, count: 24)
+    }
+
+    func setTargetRadius(_ meters: Double) {
+        targetRadiusMeters = min(max(meters, 0.20), 3.00)
     }
 
     func reset(clearPointCloud: Bool = false) {
@@ -135,6 +169,9 @@ final class LiDARSessionController: ObservableObject {
             accumulatedPointCount = 0
             densePointCount = 0
         }
+
+        coverageSectorHits = Array(repeating: 0, count: 24)
+        coverageSectors = Array(repeating: 0, count: 24)
     }
 
     func setInterrupted(_ interrupted: Bool) {
@@ -282,8 +319,36 @@ final class LiDARSessionController: ObservableObject {
             return
         }
 
+        let radius = Float(targetRadiusMeters)
+        var sectorsSeen = Set<Int>()
+
         // 2 cm world-space voxel deduplication keeps long captures bounded.
         for point in points {
+            if projectType == .object, let targetPosition {
+                let offset = point - targetPosition
+                let distance = simd_length(offset)
+
+                guard distance <= radius else { continue }
+
+                if distance > 0.02 {
+                    let azimuth = atan2(offset.x, offset.z)
+                    let horizontal = sqrt(offset.x * offset.x + offset.z * offset.z)
+                    let elevation = atan2(offset.y, horizontal)
+
+                    var column = Int(
+                        floor((Double(azimuth) + .pi) / (2 * .pi) * 8.0)
+                    )
+                    column = max(0, min(7, column))
+
+                    let normalizedElevation =
+                        (Double(elevation) + (.pi / 2)) / .pi
+                    var row = Int(floor(normalizedElevation * 3.0))
+                    row = max(0, min(2, row))
+
+                    sectorsSeen.insert(row * 8 + column)
+                }
+            }
+
             let key = PointKey(
                 x: Int((point.x / 0.02).rounded()),
                 y: Int((point.y / 0.02).rounded()),
@@ -293,6 +358,19 @@ final class LiDARSessionController: ObservableObject {
             if densePointKeys.insert(key).inserted {
                 densePointCloudPoints.append(point)
                 if densePointCloudPoints.count >= 250_000 { break }
+            }
+        }
+
+        if targetLocked, motionSpeed > 0.03 {
+            for index in sectorsSeen {
+                coverageSectorHits[index] = min(
+                    coverageSectorHits[index] + 1,
+                    10
+                )
+            }
+
+            coverageSectors = coverageSectorHits.map {
+                min(Double($0) / 6.0, 1.0)
             }
         }
 
@@ -375,7 +453,12 @@ final class LiDARSessionController: ObservableObject {
             meshAnchorCount: meshAnchorCount,
             trackingDescription: trackingDescription,
             depthWidth: Int(depthResolution.width),
-            depthHeight: Int(depthResolution.height)
+            depthHeight: Int(depthResolution.height),
+            depthValidRatio: depthValidRatio,
+            centerDistanceMeters: centerDistanceMeters,
+            densePointCount: densePointCount,
+            thermalDescription: thermalDescription,
+            targetLocked: targetLocked
         )
     }
 }
