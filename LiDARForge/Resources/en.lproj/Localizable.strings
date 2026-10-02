@@ -114,3 +114,10 @@
 "health.recommend.coverage" = "Continue around the subject and fill the red or yellow coverage sectors.";
 "health.recommend.density" = "Add another slow pass to increase geometric detail.";
 "health.recommend.ready" = "Capture quality is sufficient to continue to the next stage.";
+"quality.title" = "Capture Quality";
+"quality.fast" = "Fast";
+"quality.fast.subtitle" = "Lower processing load and heat for long sessions.";
+"quality.balanced" = "Balanced";
+"quality.balanced.subtitle" = "Recommended mix of detail, performance, and temperature.";
+"quality.maximum" = "Maximum";
+"quality.maximum.subtitle" = "Higher point density and faster previews with greater thermal load.";
