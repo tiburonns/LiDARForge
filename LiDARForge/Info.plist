@@ -22,6 +22,8 @@
     <true/>
     <key>NSCameraUsageDescription</key>
     <string>LiDARForge uses the camera and LiDAR sensor to capture spatial geometry, depth, and textures.</string>
+    <key>NSMotionUsageDescription</key>
+    <string>LiDARForge records motion data with spatial captures to improve alignment and allow later reprocessing.</string>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     <key>UILaunchScreen</key>
