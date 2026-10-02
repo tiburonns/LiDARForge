@@ -161,3 +161,4 @@
 "measure.latest" = "Última distancia";
 "measure.count" = "%d mediciones";
 "measure.clear" = "Borrar";
+"roomplan.plan2d" = "Vista previa del plano 2D";
