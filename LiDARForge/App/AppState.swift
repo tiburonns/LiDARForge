@@ -73,7 +73,7 @@ enum CaptureQualityMode: String, CaseIterable, Identifiable {
     }
 }
 
-enum WorkspaceTool: String, CaseIterable, Identifiable, Codable {
+enum WorkspaceTool: String, CaseIterable, Identifiable, Codable, Hashable {
     case measurements
     case scanHealth
     case coverageHeatmap
