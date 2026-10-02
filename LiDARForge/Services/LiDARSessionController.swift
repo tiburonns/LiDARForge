@@ -106,7 +106,7 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var exposureDurationSeconds: Double = 0
     @Published private(set) var exposureOffset: Float = 0
     @Published private(set) var worldMapData: Data?
-    @Published private(set) var worldMapSaveRequestID = UUID()
+    @Published private(set) var worldMapSaveRequestID: UUID?
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
