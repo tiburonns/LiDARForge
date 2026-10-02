@@ -209,3 +209,23 @@
 "objectCapture.instruction.finishing" = "Object Capture is saving outstanding images and session data.";
 "objectCapture.instruction.completed" = "The image set is ready for photogrammetry reconstruction or transfer.";
 "objectCapture.instruction.failed" = "The capture session ended with an error. Start a new object capture to retry.";
+
+"newProject.title" = "Choose the right capture engine";
+"newProject.subtitle" = "LiDARForge keeps one workflow while switching to the sensor and reconstruction path that best matches the project.";
+"engine.object" = "LiDAR + Object Capture";
+"engine.interior" = "RoomPlan + LiDAR";
+"engine.exterior" = "LiDAR Mesh";
+"engine.building" = "Multi-room RoomPlan";
+"engine.video" = "RGB-D Dataset";
+
+"projects.detail" = "Project";
+"projects.metrics" = "Saved Metrics";
+"projects.continue" = "Workflow";
+"projects.exports" = "Exports";
+"projects.continueCapture" = "Continue Capture";
+"projects.reopen" = "Reopen Current Stage";
+"projects.sharePointCloud" = "Share Point Cloud";
+"projects.noPointCloud" = "No saved point cloud yet";
+"projects.buildPackage" = "Build .lidarforge Package";
+"projects.buildingPackage" = "Building package…";
+"projects.sharePackage" = "Share .lidarforge Package";
