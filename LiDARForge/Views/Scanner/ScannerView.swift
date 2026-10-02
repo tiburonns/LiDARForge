@@ -485,11 +485,7 @@ struct ScannerView: View {
                         systemImage: "ruler"
                     )
                 }
-                .buttonStyle(
-                    measurementMode
-                        ? .borderedProminent
-                        : .bordered
-                )
+                .buttonStyle(.bordered)
 
                 Button {
                     showHealthReport = true
