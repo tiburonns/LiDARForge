@@ -61,6 +61,17 @@ enum ProjectType: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+
+    var engineKey: String {
+        switch self {
+        case .object: return "engine.object"
+        case .interior: return "engine.interior"
+        case .exterior: return "engine.exterior"
+        case .building: return "engine.building"
+        case .video: return "engine.video"
+        }
+    }
+
     var captureProfile: CaptureProfile {
         switch self {
         case .object:
