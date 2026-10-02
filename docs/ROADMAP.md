@@ -23,15 +23,19 @@
 - [x] Distance-aware capture coaching from SceneDepth
 - [x] Dense SceneDepth point-cloud accumulation
 - [x] PLY point-cloud export with sparse AR fallback
+- [x] Fast / Balanced / Maximum capture profiles
+- [x] Scan Health report
+- [x] Object target lock and ROI filtering
+- [x] 24-sector object coverage map
 - [x] CI build workflow
 
 ## 0.2 — Interior
 
-- [ ] RoomPlan integration
-- [ ] walls / openings / doors / windows state
+- [x] RoomPlan integration
+- [x] walls / openings / doors / windows summary
 - [ ] room completeness coaching
 - [ ] 2D plan preview
-- [ ] USDZ room export
+- [x] USDZ room mesh export
 
 ## 0.3 — Object
 
@@ -43,7 +47,8 @@
 
 ## 0.4 — Coverage Coach 2
 
-- [ ] surface-aware coverage heatmap
+- [x] directional object coverage heatmap
+- [ ] mesh-projected surface-aware coverage heatmap
 - [ ] missing-viewpoint detection
 - [ ] occlusion detection
 - [ ] depth-confidence heatmap projected into the mesh
