@@ -4,6 +4,8 @@ import UIKit
 struct ScannerView: View {
     let projectType: ProjectType
 
+    @EnvironmentObject private var appState: AppState
+
     @StateObject private var controller = LiDARSessionController()
     @State private var stage: CaptureStage = .structure
     @State private var viewMode: SensorViewMode = .cameraPoints
@@ -21,7 +23,8 @@ struct ScannerView: View {
                 controller: controller,
                 viewMode: viewMode,
                 isRunning: isRunning,
-                allowsTargetLock: projectType == .object
+                allowsTargetLock: projectType == .object,
+                captureQuality: appState.captureQuality
             )
             .ignoresSafeArea()
 
