@@ -58,7 +58,7 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Exportación y compartición PLY densa desde SceneDepth
 - Flujo de apariencia con RealityKit ObjectCaptureSession: detección, pasadas guiadas, vista de nube de puntos, nueva pasada/volteo y compartición
 - Grabación de datasets RGB-D locales dentro de paquetes `.lidarforge`
-- Persistencia de nubes de puntos por proyecto y paquetes `.lidarforge` compartibles
+- Persistencia de nubes de puntos por proyecto y paquetes `.lidarforge` compartibles e importables
 - Persistencia de ARWorldMap, ROI del objeto, mediciones y muestras 3D de cobertura por superficie
 - Archivos de fuentes RGB/profundidad/confianza/pose/intrínsecos/timestamps/IMU por proyecto para reprocesado posterior
 - Coach de perspectiva faltante derivado de cobertura direccional y superficies de la malla
@@ -68,6 +68,8 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Workflow CI de compilación
 
 > Las funciones LiDAR requieren un dispositivo físico compatible. El simulador puede compilar la interfaz, pero no proporciona datos LiDAR.
+
+Al abrir un paquete `.lidarforge` compartido, iOS lo envía de nuevo a LiDARForge, se importa a la biblioteca local de Proyectos y se asigna un nuevo ID de forma segura si el ID original ya existe.
 
 ## Próximos hitos
 
