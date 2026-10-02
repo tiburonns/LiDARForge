@@ -56,4 +56,5 @@ struct ScanProject: Identifiable, Codable {
     var type: ProjectType
     var stage: CaptureStage
     var metrics: ScanMetricsSnapshot
+    var measurements: [SpatialMeasurement]? = nil
 }
