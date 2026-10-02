@@ -44,13 +44,34 @@
 "metric.mesh" = "Malla";
 "metric.points" = "Puntos";
 "metric.tracking" = "Tracking";
+"metric.speed" = "Velocidad";
+
+"coach.title" = "Guía de captura";
+"coach.initializing" = "Inicializando el seguimiento espacial…";
+"coach.good" = "Buena captura. Continúa moviéndote alrededor del sujeto.";
+"coach.moveSlower" = "Muévete más despacio para conservar tracking y detalle.";
+"coach.addVisualDetail" = "Apunta a bordes o superficies con detalle para mejorar el tracking.";
+"coach.improveConfidence" = "Cambia el ángulo o la distancia para mejorar la confianza de profundidad.";
+"coach.changeViewpoint" = "Cambia de perspectiva; esta zona ya está bien observada.";
+"coach.ready" = "Esta pasada tiene cobertura suficiente para continuar.";
+"coach.interrupted" = "La captura fue interrumpida. Mantén la posición mientras se recupera el tracking.";
+"coach.coolDevice" = "La temperatura del dispositivo es alta. Pausa brevemente para mantener la calidad.";
 
 "scan.pause" = "Pausar";
 "scan.resume" = "Continuar";
 "scan.nextPass" = "Siguiente pasada";
 "scan.save" = "Guardar";
-"project.saved" = "Snapshot del proyecto guardado";
+"project.saved" = "Proyecto guardado.";
 "common.ok" = "OK";
+
+"projects.title" = "Proyectos";
+"projects.empty.title" = "Sin proyectos guardados";
+"projects.empty.subtitle" = "Completa una pasada de captura y aparecerá aquí.";
+
+"export.ply" = "PLY";
+"export.share" = "Compartir";
+"export.ready" = "La nube PLY de puntos de características está lista para compartir.";
+"export.failed" = "No se pudo exportar la nube de puntos.";
 
 "settings.title" = "Ajustes";
 "settings.language" = "Idioma";
