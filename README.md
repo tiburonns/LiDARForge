@@ -58,7 +58,7 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Dense SceneDepth PLY export and sharing
 - RealityKit ObjectCaptureSession appearance workflow with object detection, guided passes, point-cloud preview, flip/new-pass flow, and capture sharing
 - RGB-D dataset recording into local `.lidarforge` datasets
-- Persistent project point-cloud artifacts and shareable `.lidarforge` project packages
+- Persistent project point-cloud artifacts and shareable/importable `.lidarforge` project packages
 - Persisted ARWorldMap relocalization, object ROI, measurements, and surface-aware 3D coverage samples
 - Per-project RGB/depth/confidence/pose/intrinsics/timestamp/IMU source archives for later reprocessing
 - Missing-viewpoint coach derived from directional and mesh-surface coverage
@@ -68,6 +68,8 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - CI build workflow
 
 > LiDAR features must be tested on a physical supported device. Simulator can build the UI, but it cannot provide LiDAR sensor data.
+
+Opening a shared `.lidarforge` package routes it back into LiDARForge, imports the project into the local Projects library, and safely assigns a new project ID if the original ID already exists.
 
 ## Planned next milestones
 
