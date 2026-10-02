@@ -14,7 +14,7 @@ En lugar de ofrecer un único botón genérico de escaneo, LiDARForge organiza l
 - **Interior** — habitaciones y espacios interiores.
 - **Exterior** — exteriores, fachadas, vehículos y estructuras.
 - **Edificio** — captura arquitectónica por habitaciones o zonas.
-- **Video 3D / RGB-D** — color + profundidad sincronizados (planeado).
+- **Video 3D / RGB-D** — RGB, profundidad, confianza, pose, intrínsecos y timestamps sincronizados.
 
 ## Herramientas de sensor
 
@@ -36,7 +36,7 @@ La primera implementación incluye:
 - Acumulación de nube de puntos densa desde SceneDepth con respaldo de puntos AR
 - Métricas de tracking y malla
 
-## Hito actual — 0.1 Foundation
+## Hito actual — 0.2 Inteligencia de captura
 
 El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 
@@ -52,8 +52,13 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Persistencia de snapshots del proyecto en JSON
 - Biblioteca de proyectos guardados con eliminación
 - Captura estructural RoomPlan para proyectos de Interior
-- Resumen de habitación RoomPlan y exportación de malla USDZ
+- Resumen RoomPlan, completitud estructural, vista de plano 2D y exportación de malla USDZ
+- Captura RoomPlan multi-habitación con combinación mediante StructureBuilder
 - Exportación y compartición PLY densa desde SceneDepth
+- Flujo de apariencia con RealityKit ObjectCaptureSession: detección, pasadas guiadas, vista de nube de puntos, nueva pasada/volteo y compartición
+- Grabación de datasets RGB-D locales dentro de paquetes `.lidarforge`
+- Persistencia de nubes de puntos por proyecto y paquetes `.lidarforge` compartibles
+- Pantalla de detalle de proyecto con progreso y continuación del flujo
 - Recuperación de pausa/reanudación e interrupciones sin descartar intencionalmente el escaneo actual
 - Pantalla de herramientas del sensor
 - Workflow CI de compilación
@@ -62,15 +67,15 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 
 ## Próximos hitos
 
-- Guía de completitud de habitación y vista de plano 2D
-- Fotogrametría guiada con Object Capture
-- Mapa de cobertura por superficie
-- Grabación RGB-D
-- Proyectos de edificios con varias habitaciones
-- Exportación de mallas
-- USDZ / OBJ / GLB
-- Exportación de datasets crudos
-- Paquete de proyecto `.lidarforge`
+- Heatmap de cobertura realmente proyectado sobre la malla
+- Detección de perspectivas faltantes y oclusiones
+- Heatmap de confianza de profundidad proyectado en la geometría
+- Persistencia de ARWorldMap / relocalización para reanudar una captura en una sesión posterior
+- Stream IMU dentro de datasets RGB-D
+- Exportación y conversión de malla
+- Pipeline OBJ / STL / GLB / XYZ / LAS
+- Exportación arquitectónica PDF / SVG / DXF
+- QA en dispositivo físico, rendimiento, accesibilidad y endurecimiento para TestFlight
 
 Consulta [docs/ROADMAP.md](docs/ROADMAP.md) y [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
