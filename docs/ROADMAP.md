@@ -60,7 +60,7 @@
 - [x] synchronized RGB + depth recording
 - [x] camera pose stream
 - [x] camera intrinsics
-- [ ] IMU stream
+- [x] IMU stream
 - [x] frame timestamps
 - [x] dataset export
 
