@@ -279,3 +279,5 @@
 "projects.coverageCells" = "Muestras de cobertura guardadas";
 "projects.available" = "Disponible";
 "projects.unavailable" = "Aún no disponible";
+
+"health.recommend.surface" = "Algunas superficies reconstruidas todavía tienen poca observación. Sigue la guía de Perspectiva faltante y completa las zonas rojas o amarillas del heatmap 3D.";
