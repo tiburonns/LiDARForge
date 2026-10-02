@@ -162,3 +162,6 @@
 "measure.count" = "%d measurements";
 "measure.clear" = "Clear";
 "roomplan.plan2d" = "2D floor plan preview";
+"roomplan.completeness" = "Structural completeness";
+"roomplan.completeness.good" = "Structural edges are sufficiently complete for this pass.";
+"roomplan.completeness.more" = "Some structural edges remain incomplete. Consider another pass before continuing.";
