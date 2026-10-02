@@ -28,6 +28,8 @@ La primera implementación incluye:
 - Métricas crudas del sensor
 - Visualización tipo visión nocturna mediante profundidad
 - Estimación de cobertura
+- Guía de velocidad y distancia adaptada al tipo de proyecto
+- Acumulación de nube de puntos densa desde SceneDepth con respaldo de puntos AR
 - Métricas de tracking y malla
 
 ## Hito actual — 0.1 Foundation
@@ -44,6 +46,9 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Métricas en vivo de puntos, malla y tracking
 - Previsualización de profundidad y mapa de confianza
 - Persistencia de snapshots del proyecto en JSON
+- Biblioteca de proyectos guardados con eliminación
+- Exportación y compartición PLY densa desde SceneDepth
+- Recuperación de pausa/reanudación e interrupciones sin descartar intencionalmente el escaneo actual
 - Pantalla de herramientas del sensor
 - Workflow CI de compilación
 
@@ -56,8 +61,8 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Mapa de cobertura por superficie
 - Grabación RGB-D
 - Proyectos de edificios con varias habitaciones
-- Exportación de nubes de puntos y mallas
-- USDZ / PLY / OBJ / GLB
+- Exportación de mallas
+- USDZ / OBJ / GLB
 - Exportación de datasets crudos
 - Paquete de proyecto `.lidarforge`
 
