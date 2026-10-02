@@ -1,9 +1,15 @@
 import ARKit
 import Combine
 import CoreImage
+import CoreMotion
 import CoreVideo
 import Foundation
 import simd
+
+enum RGBDRecordingDestination {
+    case standaloneDataset
+    case projectSources(stage: String)
+}
 
 private struct RGBDFrameMetadata: Codable {
     let index: Int
@@ -19,14 +25,24 @@ private struct RGBDFrameMetadata: Codable {
     let intrinsics: [Float]
 }
 
+private struct RGBDIMUSample: Codable {
+    let timestamp: TimeInterval
+    let attitudeQuaternion: [Double]
+    let rotationRate: [Double]
+    let userAcceleration: [Double]
+    let gravity: [Double]
+}
+
 private struct RGBDDatasetManifest: Codable {
     let formatVersion: Int
     let createdAt: Date
     let finalizedAt: Date
     let frameCount: Int
+    let captureKind: String
     let coordinateSystem: String
     let depthFormat: String
     let confidenceFormat: String
+    let imuFormat: String
     let notes: [String]
 }
 
@@ -42,6 +58,15 @@ final class RGBDRecorder: ObservableObject {
         qos: .userInitiated
     )
 
+    private let motionManager = CMMotionManager()
+    private let motionQueue: OperationQueue = {
+        let queue = OperationQueue()
+        queue.name = "com.tiburonns.LiDARForge.imu-recorder"
+        queue.qualityOfService = .userInitiated
+        queue.maxConcurrentOperationCount = 1
+        return queue
+    }()
+
     private let ciContext = CIContext(options: [
         .cacheIntermediates: false
     ])
@@ -49,18 +74,37 @@ final class RGBDRecorder: ObservableObject {
     private var activeRoot: URL?
     private var createdAt: Date?
     private var metadataHandle: FileHandle?
+    private var imuHandle: FileHandle?
     private var internalFrameCount = 0
     private var acceptingFrames = false
+    private var captureKind = "dataset"
 
-    func start(projectID: UUID) {
+    func start(
+        projectID: UUID,
+        destination: RGBDRecordingDestination = .standaloneDataset
+    ) {
         guard !isRecording, !isFinalizing else { return }
 
         do {
-            let root = try Self.datasetsRoot()
-                .appendingPathComponent(
-                    "\(projectID.uuidString)-\(UUID().uuidString).lidarforge",
-                    isDirectory: true
-                )
+            let root: URL
+
+            switch destination {
+            case .standaloneDataset:
+                captureKind = "standalone-rgbd"
+                root = try Self.datasetsRoot()
+                    .appendingPathComponent(
+                        "\(projectID.uuidString)-\(UUID().uuidString).lidarforge",
+                        isDirectory: true
+                    )
+
+            case .projectSources(let stage):
+                captureKind = "project-source-\(stage)"
+                root = try Self.projectSourcesRoot(projectID: projectID)
+                    .appendingPathComponent(
+                        "\(stage)-\(UUID().uuidString)",
+                        isDirectory: true
+                    )
+            }
 
             for folder in ["rgb", "depth", "confidence", "metadata"] {
                 try FileManager.default.createDirectory(
@@ -76,17 +120,27 @@ final class RGBDRecorder: ObservableObject {
                 .appendingPathComponent("metadata", isDirectory: true)
                 .appendingPathComponent("frames.jsonl")
 
+            let imuURL = root
+                .appendingPathComponent("metadata", isDirectory: true)
+                .appendingPathComponent("imu.jsonl")
+
             FileManager.default.createFile(
                 atPath: framesURL.path,
                 contents: nil
             )
+            FileManager.default.createFile(
+                atPath: imuURL.path,
+                contents: nil
+            )
 
-            let handle = try FileHandle(forWritingTo: framesURL)
+            let frameHandle = try FileHandle(forWritingTo: framesURL)
+            let motionHandle = try FileHandle(forWritingTo: imuURL)
 
             queue.sync {
                 activeRoot = root
                 createdAt = Date()
-                metadataHandle = handle
+                metadataHandle = frameHandle
+                imuHandle = motionHandle
                 internalFrameCount = 0
                 acceptingFrames = true
             }
@@ -95,6 +149,7 @@ final class RGBDRecorder: ObservableObject {
             packageURL = nil
             errorMessage = nil
             isRecording = true
+            startMotionRecording()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -195,6 +250,7 @@ final class RGBDRecorder: ObservableObject {
 
         isRecording = false
         isFinalizing = true
+        stopMotionRecording()
 
         queue.async { [weak self] in
             guard let self else { return }
@@ -205,23 +261,29 @@ final class RGBDRecorder: ObservableObject {
                 try self.metadataHandle?.close()
                 self.metadataHandle = nil
 
+                try self.imuHandle?.close()
+                self.imuHandle = nil
+
                 guard let root = self.activeRoot,
                       let createdAt = self.createdAt else {
                     throw CocoaError(.fileNoSuchFile)
                 }
 
                 let manifest = RGBDDatasetManifest(
-                    formatVersion: 1,
+                    formatVersion: 2,
                     createdAt: createdAt,
                     finalizedAt: Date(),
                     frameCount: self.internalFrameCount,
+                    captureKind: self.captureKind,
                     coordinateSystem: "ARKit world coordinates; camera looks toward -Z",
                     depthFormat: "Float32 meters, row-major, little-endian, tightly packed",
                     confidenceFormat: "UInt8 ARKit confidence levels 0...2, row-major",
+                    imuFormat: "JSONL CoreMotion device-motion samples",
                     notes: [
                         "RGB JPEG frames retain the camera sensor orientation.",
                         "Per-frame camera transform and intrinsics are stored in metadata/frames.jsonl.",
-                        "Depth and confidence files use the dimensions stored in each frame metadata record."
+                        "Depth and confidence files use dimensions stored in each frame metadata record.",
+                        "Device-motion attitude, rotation rate, gravity, and user acceleration are stored in metadata/imu.jsonl when available."
                     ]
                 )
 
@@ -249,6 +311,79 @@ final class RGBDRecorder: ObservableObject {
             self.activeRoot = nil
             self.createdAt = nil
         }
+    }
+
+    private func startMotionRecording() {
+        guard motionManager.isDeviceMotionAvailable else { return }
+
+        motionManager.deviceMotionUpdateInterval = 1.0 / 60.0
+        motionManager.startDeviceMotionUpdates(
+            using: .xArbitraryZVertical,
+            to: motionQueue
+        ) { [weak self] motion, error in
+            guard let self else { return }
+
+            if let error {
+                DispatchQueue.main.async { [weak self] in
+                    self?.errorMessage = error.localizedDescription
+                }
+                return
+            }
+
+            guard let motion,
+                  self.isRecording,
+                  let handle = self.imuHandle else {
+                return
+            }
+
+            let quaternion = motion.attitude.quaternion
+            let rotation = motion.rotationRate
+            let acceleration = motion.userAcceleration
+            let gravity = motion.gravity
+
+            let sample = RGBDIMUSample(
+                timestamp: motion.timestamp,
+                attitudeQuaternion: [
+                    quaternion.x,
+                    quaternion.y,
+                    quaternion.z,
+                    quaternion.w
+                ],
+                rotationRate: [
+                    rotation.x,
+                    rotation.y,
+                    rotation.z
+                ],
+                userAcceleration: [
+                    acceleration.x,
+                    acceleration.y,
+                    acceleration.z
+                ],
+                gravity: [
+                    gravity.x,
+                    gravity.y,
+                    gravity.z
+                ]
+            )
+
+            do {
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.sortedKeys]
+                let data = try encoder.encode(sample)
+                handle.seekToEndOfFile()
+                handle.write(data)
+                handle.write(Data([0x0A]))
+            } catch {
+                DispatchQueue.main.async { [weak self] in
+                    self?.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func stopMotionRecording() {
+        motionManager.stopDeviceMotionUpdates()
+        motionQueue.waitUntilAllOperationsAreFinished()
     }
 
     private func writeRGB(
@@ -335,10 +470,7 @@ final class RGBDRecorder: ObservableObject {
     }
 
     private static func datasetsRoot() throws -> URL {
-        guard let documents = FileManager.default.urls(
-            for: .documentDirectory,
-            in: .userDomainMask
-        ).first else {
+        guard let documents = documentsRoot() else {
             throw CocoaError(.fileNoSuchFile)
         }
 
@@ -352,6 +484,34 @@ final class RGBDRecorder: ObservableObject {
         )
 
         return root
+    }
+
+    private static func projectSourcesRoot(
+        projectID: UUID
+    ) throws -> URL {
+        guard let documents = documentsRoot() else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+
+        let root = documents
+            .appendingPathComponent("LiDARForge", isDirectory: true)
+            .appendingPathComponent("Projects", isDirectory: true)
+            .appendingPathComponent(projectID.uuidString, isDirectory: true)
+            .appendingPathComponent("sources", isDirectory: true)
+
+        try FileManager.default.createDirectory(
+            at: root,
+            withIntermediateDirectories: true
+        )
+
+        return root
+    }
+
+    private static func documentsRoot() -> URL? {
+        FileManager.default.urls(
+            for: .documentDirectory,
+            in: .userDomainMask
+        ).first
     }
 
     private static func flatten(_ matrix: simd_float4x4) -> [Float] {
