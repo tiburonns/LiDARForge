@@ -40,6 +40,34 @@ struct ProjectsView: View {
                             .font(.subheadline)
 
                             ProgressView(value: project.metrics.coverage)
+
+                            HStack(spacing: 12) {
+                                if let confidence = project.metrics.confidence {
+                                    Label(
+                                        confidence.formatted(
+                                            .percent.precision(.fractionLength(0))
+                                        ),
+                                        systemImage: "checkmark.shield"
+                                    )
+                                }
+
+                                if let dense = project.metrics.densePointCount {
+                                    Label(
+                                        dense.formatted(),
+                                        systemImage: "point.3.connected.trianglepath.dotted"
+                                    )
+                                }
+
+                                if let count = project.measurements?.count,
+                                   count > 0 {
+                                    Label(
+                                        "\(count)",
+                                        systemImage: "ruler"
+                                    )
+                                }
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 4)
                     }
