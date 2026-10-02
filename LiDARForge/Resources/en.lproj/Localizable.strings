@@ -55,6 +55,8 @@
 "coach.moveFarther" = "Move farther away; the center area is too close for this capture profile.";
 "coach.lockTarget" = "Tap the object to lock the capture target before continuing.";
 "coach.fillCoverage" = "Move around the object and fill the red or yellow coverage sectors.";
+"coach.holdSteady" = "Hold the phone steadier; the current exposure and motion increase blur risk.";
+"coach.improveLighting" = "Lighting is challenging for texture capture. Reduce harsh glare or very dark areas.";
 "coach.addVisualDetail" = "Aim at textured edges or detailed surfaces to improve tracking.";
 "coach.improveConfidence" = "Change angle or distance to improve depth confidence.";
 "coach.changeViewpoint" = "Change viewpoint; this area is already well observed.";
