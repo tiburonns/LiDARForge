@@ -40,8 +40,19 @@ The 0.1 coach uses a lightweight coverage estimate derived from:
 - unique camera-position cells
 - reconstructed mesh anchor count
 - scan duration
+- project-specific capture thresholds
+- depth validity, center distance, motion speed, and tracking state for live guidance
 
 This is deliberately called an **estimate**. A future milestone will replace it with a surface-aware visibility map tied to reconstructed geometry.
+
+### Point-cloud pipeline
+
+LiDARForge currently keeps two point sources:
+
+1. **SceneDepth cloud** — sampled depth pixels are back-projected using scaled camera intrinsics and transformed into ARKit world coordinates. Medium/high confidence samples are preferred and world-space points are deduplicated in a small voxel grid.
+2. **AR feature points** — retained as a sparse fallback when SceneDepth is unavailable.
+
+PLY export prefers the SceneDepth cloud.
 
 ### Reconstruction modules
 
