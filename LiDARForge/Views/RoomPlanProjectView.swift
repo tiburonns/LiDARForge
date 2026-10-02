@@ -232,8 +232,8 @@ private struct RoomPlanCaptureContainer: UIViewRepresentable {
     @ObservedObject var model: RoomPlanCaptureModel
     @Binding var isRunning: Bool
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(model: model)
+    func makeCoordinator() -> RoomPlanCaptureCoordinator {
+        RoomPlanCaptureCoordinator(model: model)
     }
 
     func makeUIView(context: Context) -> RoomCaptureView {
@@ -254,74 +254,84 @@ private struct RoomPlanCaptureContainer: UIViewRepresentable {
 
     static func dismantleUIView(
         _ uiView: RoomCaptureView,
-        coordinator: Coordinator
+        coordinator: RoomPlanCaptureCoordinator
     ) {
         coordinator.stop()
         uiView.delegate = nil
     }
+}
 
-    final class Coordinator: NSObject, RoomCaptureViewDelegate {
-        private let model: RoomPlanCaptureModel
-        private weak var captureView: RoomCaptureView?
-        private var running = false
+@objc(LiDARForgeRoomPlanCaptureCoordinator)
+private final class RoomPlanCaptureCoordinator: NSObject, RoomCaptureViewDelegate {
+    private let model: RoomPlanCaptureModel
+    private weak var captureView: RoomCaptureView?
+    private var running = false
 
-        init(model: RoomPlanCaptureModel) {
-            self.model = model
+    init(model: RoomPlanCaptureModel) {
+        self.model = model
+        super.init()
+    }
+
+    required init?(coder: NSCoder) {
+        return nil
+    }
+
+    func encode(with coder: NSCoder) {
+        // The delegate is never intentionally archived by LiDARForge.
+    }
+
+    func attach(to view: RoomCaptureView) {
+        captureView = view
+    }
+
+    func setRunning(_ shouldRun: Bool) {
+        guard shouldRun != running,
+              let captureView else {
+            return
         }
 
-        func attach(to view: RoomCaptureView) {
-            captureView = view
+        running = shouldRun
+
+        if shouldRun {
+            captureView.captureSession.run(
+                configuration: RoomCaptureSession.Configuration()
+            )
+        } else {
+            captureView.captureSession.stop()
         }
+    }
 
-        func setRunning(_ shouldRun: Bool) {
-            guard shouldRun != running,
-                  let captureView else {
-                return
-            }
+    func stop() {
+        guard running else { return }
+        captureView?.captureSession.stop()
+        running = false
+    }
 
-            running = shouldRun
-
-            if shouldRun {
-                captureView.captureSession.run(
-                    configuration: RoomCaptureSession.Configuration()
-                )
-            } else {
-                captureView.captureSession.stop()
-            }
-        }
-
-        func stop() {
-            guard running else { return }
-            captureView?.captureSession.stop()
-            running = false
-        }
-
-        func captureView(
-            shouldPresent roomDataForProcessing: CapturedRoomData,
-            error: Error?
-        ) -> Bool {
-            if let error {
-                Task { @MainActor [weak model] in
-                    model?.errorMessage = error.localizedDescription
-                }
-            }
-
-            return true
-        }
-
-        func captureView(
-            didPresent processedResult: CapturedRoom,
-            error: Error?
-        ) {
-            if let error {
-                Task { @MainActor [weak model] in
-                    model?.errorMessage = error.localizedDescription
-                }
-            }
-
+    func captureView(
+        shouldPresent roomDataForProcessing: CapturedRoomData,
+        error: Error?
+    ) -> Bool {
+        if let error {
             Task { @MainActor [weak model] in
-                model?.complete(with: processedResult)
+                model?.errorMessage = error.localizedDescription
             }
+        }
+
+        return true
+    }
+
+    func captureView(
+        didPresent processedResult: CapturedRoom,
+        error: Error?
+    ) {
+        if let error {
+            Task { @MainActor [weak model] in
+                model?.errorMessage = error.localizedDescription
+            }
+        }
+
+        Task { @MainActor [weak model] in
+            model?.complete(with: processedResult)
         }
     }
 }
