@@ -87,3 +87,30 @@
 "language.system" = "System";
 "language.english" = "English";
 "language.spanish" = "Spanish";
+"target.title" = "Target";
+"target.tapToLock" = "Tap the subject to lock the scan target";
+"target.locked" = "Target locked";
+"target.notLocked" = "Not locked";
+"target.clear" = "Clear";
+"target.radius" = "ROI radius";
+"target.status" = "Status";
+
+"coverage.map" = "Coverage Map";
+"coverage.directional" = "Directional surface coverage";
+"coverage.missing" = "Missing";
+"coverage.partial" = "Partial";
+"coverage.good" = "Good";
+
+"health.title" = "Scan Health";
+"health.overall" = "Overall capture quality";
+"health.capture" = "Capture quality";
+"health.depthValidity" = "Valid depth";
+"health.pointDensity" = "Point density";
+"health.densePoints" = "Dense points";
+"health.recommendation" = "Recommendation";
+"health.recommend.tracking" = "Recover stable tracking before finishing this pass.";
+"health.recommend.depth" = "Change angle or distance to obtain more valid LiDAR depth.";
+"health.recommend.target" = "Lock the object target so background geometry can be excluded.";
+"health.recommend.coverage" = "Continue around the subject and fill the red or yellow coverage sectors.";
+"health.recommend.density" = "Add another slow pass to increase geometric detail.";
+"health.recommend.ready" = "Capture quality is sufficient to continue to the next stage.";
