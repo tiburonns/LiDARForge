@@ -78,7 +78,7 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - PDF / SVG / DXF architectural plan export
 - Physical-device QA, performance tuning, accessibility, and TestFlight hardening
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+See [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md).
 
 ## Privacy
 
