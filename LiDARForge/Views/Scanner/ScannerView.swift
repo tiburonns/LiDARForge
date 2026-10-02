@@ -266,7 +266,7 @@ struct ScannerView: View {
 
             Text(
                 String(
-                    format: String(localized: recommendation.directionKey),
+                    format: NSLocalizedString(recommendation.directionKey, comment: ""),
                     recommendation.azimuthDegrees
                 )
             )
