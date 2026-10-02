@@ -3,6 +3,7 @@ import Combine
 import CoreGraphics
 import CoreVideo
 import Foundation
+import simd
 import UIKit
 
 enum CaptureGuidance: String {
