@@ -194,6 +194,8 @@ final class AppState: ObservableObject {
         }
     }
 
+    @Published var importMessage: String?
+
     @Published private(set) var toolOrder: [WorkspaceTool] {
         didSet {
             UserDefaults.standard.set(
@@ -280,5 +282,19 @@ final class AppState: ObservableObject {
     func resetToolLayout() {
         enabledTools = Set(WorkspaceTool.defaultOrder)
         toolOrder = WorkspaceTool.defaultOrder
+    }
+
+    func importProjectPackage(from url: URL) {
+        Task {
+            do {
+                _ = try await ProjectStore.shared.importPackage(from: url)
+                importMessage = String(localized: "import.success")
+            } catch {
+                importMessage = String(
+                    format: String(localized: "import.failed"),
+                    error.localizedDescription
+                )
+            }
+        }
     }
 }
