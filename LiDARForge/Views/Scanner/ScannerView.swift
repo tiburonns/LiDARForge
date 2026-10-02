@@ -993,6 +993,13 @@ private struct ScanHealthReportView: View {
                 scoreRow("metric.confidence", controller.confidence ?? 0)
                 scoreRow("health.pointDensity", densityScore)
 
+                if !controller.surfaceCoverageCells.isEmpty {
+                    scoreRow(
+                        "coverage.surface",
+                        controller.surfaceCoverageScore
+                    )
+                }
+
                 LabeledContent("metric.tracking") {
                     Text(controller.trackingDescription)
                 }
@@ -1076,6 +1083,10 @@ private struct ScanHealthReportView: View {
         }
         if projectType == .object, !controller.targetLocked {
             return "health.recommend.target"
+        }
+        if !controller.surfaceCoverageCells.isEmpty,
+           controller.surfaceCoverageScore < 0.55 {
+            return "health.recommend.surface"
         }
         if controller.coverage < projectType.captureProfile.targetCoverage {
             return "health.recommend.coverage"
