@@ -150,3 +150,10 @@
 "building.capture.complete" = "Building structure complete";
 "building.capture.mergedRooms" = "%d rooms merged";
 "building.capture.shareUSDZ" = "Share structure";
+"measure.title" = "Measure";
+"measure.done" = "Done measuring";
+"measure.tapFirst" = "Tap the first point";
+"measure.tapSecond" = "Tap the second point";
+"measure.latest" = "Latest distance";
+"measure.count" = "%d measurements";
+"measure.clear" = "Clear";
