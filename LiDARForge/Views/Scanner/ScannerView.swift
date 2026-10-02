@@ -536,14 +536,34 @@ struct ScannerView: View {
                 .buttonStyle(.borderedProminent)
 
                 if let next = stage.next {
-                    Button {
-                        persist(stage: stage, showConfirmation: false)
-                        stage = next
-                        controller.reset(clearPointCloud: false)
-                    } label: {
-                        Label("scan.nextPass", systemImage: "arrow.right")
+                    if projectType == .object, next == .appearance {
+                        NavigationLink {
+                            ObjectCaptureProjectView(projectID: projectID)
+                        } label: {
+                            Label(
+                                "objectCapture.continueAppearance",
+                                systemImage: "camera.macro"
+                            )
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .simultaneousGesture(
+                            TapGesture().onEnded {
+                                persist(
+                                    stage: stage,
+                                    showConfirmation: false
+                                )
+                            }
+                        )
+                    } else {
+                        Button {
+                            persist(stage: stage, showConfirmation: false)
+                            stage = next
+                            controller.reset(clearPointCloud: false)
+                        } label: {
+                            Label("scan.nextPass", systemImage: "arrow.right")
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.bordered)
                 } else {
                     Button {
                         persist(
