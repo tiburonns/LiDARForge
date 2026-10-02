@@ -527,7 +527,8 @@ struct ScannerView: View {
             name: projectType.rawValue.capitalized,
             type: projectType,
             stage: stage,
-            metrics: controller.snapshot
+            metrics: controller.snapshot,
+            measurements: controller.measurements
         )
 
         Task {
