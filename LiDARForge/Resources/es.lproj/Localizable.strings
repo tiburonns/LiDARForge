@@ -45,11 +45,14 @@
 "metric.points" = "Puntos";
 "metric.tracking" = "Tracking";
 "metric.speed" = "Velocidad";
+"metric.distance" = "Distancia";
 
 "coach.title" = "Guía de captura";
 "coach.initializing" = "Inicializando el seguimiento espacial…";
 "coach.good" = "Buena captura. Continúa moviéndote alrededor del sujeto.";
 "coach.moveSlower" = "Muévete más despacio para conservar tracking y detalle.";
+"coach.moveCloser" = "Acércate para colocar la zona central dentro del rango útil de profundidad.";
+"coach.moveFarther" = "Aléjate; la zona central está demasiado cerca para este perfil de captura.";
 "coach.addVisualDetail" = "Apunta a bordes o superficies con detalle para mejorar el tracking.";
 "coach.improveConfidence" = "Cambia el ángulo o la distancia para mejorar la confianza de profundidad.";
 "coach.changeViewpoint" = "Cambia de perspectiva; esta zona ya está bien observada.";
