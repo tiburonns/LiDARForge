@@ -7,6 +7,7 @@ struct ScannerView: View {
     @EnvironmentObject private var appState: AppState
 
     @StateObject private var controller = LiDARSessionController()
+    @StateObject private var rgbdRecorder = RGBDRecorder()
     @State private var stage: CaptureStage
     @State private var viewMode: SensorViewMode = .cameraPoints
     @State private var isRunning = true
@@ -34,7 +35,8 @@ struct ScannerView: View {
                 isRunning: isRunning,
                 allowsTargetLock: projectType == .object,
                 measurementMode: measurementMode,
-                captureQuality: appState.captureQuality
+                captureQuality: appState.captureQuality,
+                rgbdRecorder: projectType == .video ? rgbdRecorder : nil
             )
             .ignoresSafeArea()
 
@@ -60,6 +62,10 @@ struct ScannerView: View {
 
                 if measurementMode {
                     measurementCard
+                }
+
+                if projectType == .video {
+                    rgbdRecorderCard
                 }
 
                 Spacer()
@@ -93,6 +99,9 @@ struct ScannerView: View {
         }
         .onDisappear {
             isRunning = false
+            if rgbdRecorder.isRecording {
+                rgbdRecorder.stop()
+            }
         }
         .alert(
             "LiDARForge",
@@ -262,6 +271,78 @@ struct ScannerView: View {
                 )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var rgbdRecorderCard: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack {
+                Label(
+                    rgbdRecorder.isRecording
+                        ? "rgbd.recording"
+                        : "rgbd.title",
+                    systemImage: rgbdRecorder.isRecording
+                        ? "record.circle.fill"
+                        : "video.badge.waveform"
+                )
+                .font(.caption.bold())
+
+                Spacer()
+
+                if rgbdRecorder.isRecording {
+                    Text("\(rgbdRecorder.frameCount)")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(
+                rgbdRecorder.isRecording
+                    ? "rgbd.recording.subtitle"
+                    : "rgbd.subtitle"
+            )
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+
+            HStack {
+                if rgbdRecorder.isRecording {
+                    Button {
+                        rgbdRecorder.stop()
+                    } label: {
+                        Label("rgbd.stop", systemImage: "stop.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                } else if rgbdRecorder.isFinalizing {
+                    ProgressView()
+                    Text("rgbd.finalizing")
+                        .font(.caption)
+                } else {
+                    Button {
+                        rgbdRecorder.start(projectID: projectID)
+                    } label: {
+                        Label("rgbd.start", systemImage: "record.circle")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+
+                Spacer()
+
+                if let packageURL = rgbdRecorder.packageURL,
+                   !rgbdRecorder.isFinalizing {
+                    ShareLink(item: packageURL) {
+                        Label("rgbd.share", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            if let error = rgbdRecorder.errorMessage {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(10)
