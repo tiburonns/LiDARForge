@@ -33,7 +33,7 @@ struct SettingsView: View {
             }
 
             Section("settings.about") {
-                LabeledContent("settings.version", value: "0.1.0")
+                LabeledContent("settings.version", value: "0.2.0")
                 LabeledContent("settings.processing", value: String(localized: "settings.localFirst"))
             }
         }
