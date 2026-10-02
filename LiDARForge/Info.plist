@@ -24,6 +24,39 @@
     <string>LiDARForge uses the camera and LiDAR sensor to capture spatial geometry, depth, and textures.</string>
     <key>NSMotionUsageDescription</key>
     <string>LiDARForge records motion data with spatial captures to improve alignment and allow later reprocessing.</string>
+    <key>UTExportedTypeDeclarations</key>
+    <array>
+        <dict>
+            <key>UTTypeIdentifier</key>
+            <string>com.tiburonns.lidarforge.project</string>
+            <key>UTTypeDescription</key>
+            <string>LiDARForge Project</string>
+            <key>UTTypeConformsTo</key>
+            <array>
+                <string>com.apple.package</string>
+            </array>
+            <key>UTTypeTagSpecification</key>
+            <dict>
+                <key>public.filename-extension</key>
+                <array>
+                    <string>lidarforge</string>
+                </array>
+            </dict>
+        </dict>
+    </array>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>LiDARForge Project</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.tiburonns.lidarforge.project</string>
+            </array>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
+    </array>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     <key>UILaunchScreen</key>
