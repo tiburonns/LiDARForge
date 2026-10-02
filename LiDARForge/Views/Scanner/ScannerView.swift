@@ -9,6 +9,7 @@ struct ScannerView: View {
 
     @StateObject private var controller = LiDARSessionController()
     @StateObject private var rgbdRecorder = RGBDRecorder()
+    @StateObject private var sourceRecorder = RGBDRecorder()
     @State private var stage: CaptureStage
     @State private var viewMode: SensorViewMode = .cameraPoints
     @State private var isRunning: Bool
@@ -17,6 +18,7 @@ struct ScannerView: View {
     @State private var exportURL: URL?
     @State private var showHealthReport = false
     @State private var measurementMode = false
+    @State private var showSurfaceHeatmap = true
 
     @State private var projectID = UUID()
     @State private var projectCreatedAt = Date()
@@ -45,8 +47,13 @@ struct ScannerView: View {
                 allowsTargetLock: projectType == .object,
                 measurementMode: measurementMode,
                 captureQuality: appState.captureQuality,
-                rgbdRecorder: projectType == .video ? rgbdRecorder : nil,
-                initialWorldMapData: initialWorldMapData
+                rgbdRecorder: projectType == .video
+                    ? rgbdRecorder
+                    : (appState.isEnabled(.sourceArchive) ? sourceRecorder : nil),
+                initialWorldMapData: initialWorldMapData,
+                showSurfaceHeatmap:
+                    appState.isEnabled(.coverageHeatmap) &&
+                    showSurfaceHeatmap
             )
             .ignoresSafeArea()
 
@@ -66,6 +73,11 @@ struct ScannerView: View {
                 header
                 coachCard
 
+                if appState.isEnabled(.coverageHeatmap),
+                   let recommendation = controller.missingViewpointRecommendation {
+                    missingViewpointCard(recommendation)
+                }
+
                 if projectType == .object, !measurementMode {
                     targetControls
                 }
@@ -80,7 +92,9 @@ struct ScannerView: View {
 
                 Spacer()
 
-                if projectType == .object, controller.targetLocked {
+                if appState.isEnabled(.coverageHeatmap),
+                   projectType == .object,
+                   controller.targetLocked {
                     coverageHeatmap
                 }
 
@@ -103,12 +117,27 @@ struct ScannerView: View {
         .onAppear {
             controller.configure(for: projectType)
             controller.setStage(stage)
+            showSurfaceHeatmap = appState.isEnabled(.coverageHeatmap)
+
             if let saved = existingProject?.measurements {
                 controller.restoreMeasurements(saved)
             }
+
+            startSourceArchiveIfNeeded()
         }
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
+        }
+        .onChange(of: appState.enabledTools) { _, _ in
+            if appState.isEnabled(.sourceArchive) {
+                startSourceArchiveIfNeeded()
+            } else if sourceRecorder.isRecording {
+                sourceRecorder.stop()
+            }
+
+            if !appState.isEnabled(.coverageHeatmap) {
+                showSurfaceHeatmap = false
+            }
         }
         .onChange(of: controller.worldMapData) { _, data in
             guard let data else { return }
@@ -130,8 +159,13 @@ struct ScannerView: View {
         }
         .onDisappear {
             isRunning = false
+
             if rgbdRecorder.isRecording {
                 rgbdRecorder.stop()
+            }
+
+            if sourceRecorder.isRecording {
+                sourceRecorder.stop()
             }
         }
         .alert(
