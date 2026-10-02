@@ -843,7 +843,9 @@ final class LiDARSessionController: ObservableObject {
             densePointCount: densePointCount,
             thermalDescription: thermalDescription,
             targetLocked: targetLocked,
-            measurementCount: measurements.count
+            measurementCount: measurements.count,
+            surfaceCoverageScore: surfaceCoverageScore,
+            surfaceCellCount: surfaceCoverageCells.count
         )
     }
 }
