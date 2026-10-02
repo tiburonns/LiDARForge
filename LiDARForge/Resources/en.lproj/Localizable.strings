@@ -281,3 +281,6 @@
 "projects.unavailable" = "Not yet available";
 
 "health.recommend.surface" = "Some reconstructed surfaces are still weakly observed. Follow the Missing Viewpoint guidance and fill the red or yellow 3D heatmap areas.";
+
+"import.success" = "LiDARForge project imported. It is now available in Projects.";
+"import.failed" = "The LiDARForge project could not be imported: %@";
