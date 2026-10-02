@@ -209,3 +209,23 @@
 "objectCapture.instruction.finishing" = "Object Capture está guardando las imágenes y datos pendientes.";
 "objectCapture.instruction.completed" = "El conjunto de imágenes está listo para reconstrucción fotogramétrica o transferencia.";
 "objectCapture.instruction.failed" = "La sesión terminó con un error. Inicia una captura nueva para reintentar.";
+
+"newProject.title" = "Elige el motor de captura adecuado";
+"newProject.subtitle" = "LiDARForge mantiene un mismo flujo y cambia al sensor y proceso de reconstrucción que mejor corresponde al proyecto.";
+"engine.object" = "LiDAR + Object Capture";
+"engine.interior" = "RoomPlan + LiDAR";
+"engine.exterior" = "Malla LiDAR";
+"engine.building" = "RoomPlan multi-habitación";
+"engine.video" = "Dataset RGB-D";
+
+"projects.detail" = "Proyecto";
+"projects.metrics" = "Métricas guardadas";
+"projects.continue" = "Flujo";
+"projects.exports" = "Exportaciones";
+"projects.continueCapture" = "Continuar captura";
+"projects.reopen" = "Reabrir etapa actual";
+"projects.sharePointCloud" = "Compartir nube de puntos";
+"projects.noPointCloud" = "Aún no hay nube de puntos guardada";
+"projects.buildPackage" = "Crear paquete .lidarforge";
+"projects.buildingPackage" = "Creando paquete…";
+"projects.sharePackage" = "Compartir paquete .lidarforge";
