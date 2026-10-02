@@ -281,3 +281,6 @@
 "projects.unavailable" = "Aún no disponible";
 
 "health.recommend.surface" = "Algunas superficies reconstruidas todavía tienen poca observación. Sigue la guía de Perspectiva faltante y completa las zonas rojas o amarillas del heatmap 3D.";
+
+"import.success" = "Proyecto LiDARForge importado. Ya está disponible en Proyectos.";
+"import.failed" = "No se pudo importar el proyecto LiDARForge: %@";
