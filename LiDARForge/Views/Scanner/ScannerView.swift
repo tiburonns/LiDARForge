@@ -8,7 +8,11 @@ struct ScannerView: View {
     @State private var stage: CaptureStage = .structure
     @State private var viewMode: SensorViewMode = .cameraPoints
     @State private var isRunning = true
-    @State private var saveMessage: String?
+    @State private var statusMessage: String?
+    @State private var exportURL: URL?
+
+    private let projectID = UUID()
+    private let projectCreatedAt = Date()
 
     var body: some View {
         ZStack {
@@ -27,6 +31,7 @@ struct ScannerView: View {
 
             VStack(spacing: 12) {
                 header
+                coachCard
                 Spacer()
                 metrics
                 modePicker
@@ -39,15 +44,15 @@ struct ScannerView: View {
             isRunning = false
         }
         .alert(
-            "project.saved",
+            "LiDARForge",
             isPresented: Binding(
-                get: { saveMessage != nil },
-                set: { if !$0 { saveMessage = nil } }
+                get: { statusMessage != nil },
+                set: { if !$0 { statusMessage = nil } }
             )
         ) {
             Button("common.ok", role: .cancel) { }
         } message: {
-            Text(saveMessage ?? "")
+            Text(statusMessage ?? "")
         }
     }
 
@@ -82,14 +87,39 @@ struct ScannerView: View {
                 .foregroundStyle(.secondary)
 
             ProgressView(value: controller.coverage)
-                .tint(controller.coverage > 0.75 ? .green : .accentColor)
+                .tint(controller.recommendedReady ? .green : .accentColor)
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
     }
 
+    private var coachCard: some View {
+        HStack(spacing: 10) {
+            Image(systemName: controller.captureGuidance.symbol)
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("coach.title")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(LocalizedStringKey(controller.captureGuidance.titleKey))
+                    .font(.subheadline.weight(.semibold))
+            }
+
+            Spacer()
+
+            if controller.recommendedReady {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
     private var metrics: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 10) {
             metric(
                 title: "metric.coverage",
                 value: controller.coverage.formatted(.percent.precision(.fractionLength(0)))
@@ -101,13 +131,13 @@ struct ScannerView: View {
             )
 
             metric(
-                title: "metric.mesh",
-                value: "\(controller.meshAnchorCount)"
+                title: "metric.speed",
+                value: controller.motionSpeed.formatted(.number.precision(.fractionLength(2))) + " m/s"
             )
 
             metric(
                 title: "metric.points",
-                value: "\(controller.featurePointCount)"
+                value: "\(controller.accumulatedPointCount)"
             )
         }
         .padding(10)
@@ -119,6 +149,8 @@ struct ScannerView: View {
             Text(value)
                 .font(.caption.bold())
                 .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -152,40 +184,60 @@ struct ScannerView: View {
     }
 
     private var controls: some View {
-        HStack {
-            Button {
-                isRunning.toggle()
-            } label: {
-                Label(
-                    isRunning ? "scan.pause" : "scan.resume",
-                    systemImage: isRunning ? "pause.fill" : "play.fill"
-                )
-            }
-            .buttonStyle(.borderedProminent)
-
-            if let next = stage.next {
+        VStack(spacing: 8) {
+            HStack {
                 Button {
-                    stage = next
-                    controller.reset()
+                    isRunning.toggle()
                 } label: {
-                    Label("scan.nextPass", systemImage: "arrow.right")
-                }
-                .buttonStyle(.bordered)
-            } else {
-                Button {
-                    saveSnapshot()
-                } label: {
-                    Label("scan.save", systemImage: "square.and.arrow.down")
+                    Label(
+                        isRunning ? "scan.pause" : "scan.resume",
+                        systemImage: isRunning ? "pause.fill" : "play.fill"
+                    )
                 }
                 .buttonStyle(.borderedProminent)
+
+                if let next = stage.next {
+                    Button {
+                        persist(stage: stage, showConfirmation: false)
+                        stage = next
+                        controller.reset(clearPointCloud: false)
+                    } label: {
+                        Label("scan.nextPass", systemImage: "arrow.right")
+                    }
+                    .buttonStyle(.bordered)
+                } else {
+                    Button {
+                        persist(stage: stage, showConfirmation: true)
+                    } label: {
+                        Label("scan.save", systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+
+            HStack {
+                Button {
+                    exportPointCloud()
+                } label: {
+                    Label("export.ply", systemImage: "point.3.connected.trianglepath.dotted")
+                }
+                .buttonStyle(.bordered)
+                .disabled(controller.accumulatedPointCount == 0)
+
+                if let exportURL {
+                    ShareLink(item: exportURL) {
+                        Label("export.share", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
         }
     }
 
-    private func saveSnapshot() {
+    private func persist(stage: CaptureStage, showConfirmation: Bool) {
         let project = ScanProject(
-            id: UUID(),
-            createdAt: Date(),
+            id: projectID,
+            createdAt: projectCreatedAt,
             updatedAt: Date(),
             name: projectType.rawValue.capitalized,
             type: projectType,
@@ -195,15 +247,31 @@ struct ScannerView: View {
 
         Task {
             do {
-                let url = try await ProjectStore.shared.save(project)
-                await MainActor.run {
-                    saveMessage = url.deletingLastPathComponent().lastPathComponent
+                _ = try await ProjectStore.shared.save(project)
+                if showConfirmation {
+                    await MainActor.run {
+                        statusMessage = String(localized: "project.saved")
+                    }
                 }
             } catch {
                 await MainActor.run {
-                    saveMessage = error.localizedDescription
+                    statusMessage = error.localizedDescription
                 }
             }
+        }
+    }
+
+    private func exportPointCloud() {
+        let points = controller.pointCloudSnapshot()
+
+        do {
+            exportURL = try PointCloudExporter.exportPLY(
+                points: points,
+                projectID: projectID
+            )
+            statusMessage = String(localized: "export.ready")
+        } catch {
+            statusMessage = String(localized: "export.failed")
         }
     }
 }
