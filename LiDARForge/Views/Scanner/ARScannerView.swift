@@ -13,6 +13,7 @@ struct ARScannerView: UIViewRepresentable {
     var captureQuality: CaptureQualityMode = .balanced
     var rgbdRecorder: RGBDRecorder?
     var initialWorldMapData: Data?
+    var showSurfaceHeatmap: Bool = false
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -29,6 +30,11 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setInitialWorldMapData(initialWorldMapData)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
+        context.coordinator.setSurfaceHeatmap(
+            showSurfaceHeatmap,
+            cells: controller.surfaceCoverageCells,
+            on: view
+        )
         return view
     }
 
@@ -40,6 +46,11 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setInitialWorldMapData(initialWorldMapData)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
+        context.coordinator.setSurfaceHeatmap(
+            showSurfaceHeatmap,
+            cells: controller.surfaceCoverageCells,
+            on: uiView
+        )
         context.coordinator.handleWorldMapSaveRequest(
             controller.worldMapSaveRequestID,
             on: uiView
@@ -47,6 +58,7 @@ struct ARScannerView: UIViewRepresentable {
     }
 
     static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
+        coordinator.removeSurfaceHeatmap()
         uiView.session.pause()
         uiView.session.delegate = nil
     }
@@ -59,13 +71,16 @@ struct ARScannerView: UIViewRepresentable {
         private var lastMetricsTimestamp: TimeInterval = 0
         private var lastPreviewTimestamp: TimeInterval = 0
         private var lastPointCloudTimestamp: TimeInterval = 0
+        private var lastMeshSurfaceTimestamp: TimeInterval = 0
         private var lastRGBDTimestamp: TimeInterval = 0
+        private var lastHeatmapRender = Date.distantPast
         private var allowsTargetLock = false
         private var measurementMode = false
         private var captureQuality: CaptureQualityMode = .balanced
         private weak var rgbdRecorder: RGBDRecorder?
         private var initialWorldMapData: Data?
         private var lastWorldMapSaveRequestID: UUID?
+        private var heatmapAnchor: AnchorEntity?
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -107,6 +122,59 @@ struct ARScannerView: UIViewRepresentable {
         func setInitialWorldMapData(_ data: Data?) {
             guard !hasStarted else { return }
             initialWorldMapData = data
+        }
+
+        func setSurfaceHeatmap(
+            _ enabled: Bool,
+            cells: [SurfaceCoverageCell],
+            on view: ARView
+        ) {
+            guard enabled else {
+                removeSurfaceHeatmap()
+                return
+            }
+
+            guard Date().timeIntervalSince(lastHeatmapRender) >= 0.65 else {
+                return
+            }
+
+            lastHeatmapRender = Date()
+            removeSurfaceHeatmap()
+
+            guard !cells.isEmpty else { return }
+
+            let anchor = AnchorEntity(world: .zero)
+            let mesh = MeshResource.generateSphere(radius: 0.018)
+
+            for cell in cells.prefix(320) {
+                let uiColor: UIColor
+                if cell.coverage >= 0.66 {
+                    uiColor = UIColor.systemGreen.withAlphaComponent(0.62)
+                } else if cell.coverage >= 0.25 {
+                    uiColor = UIColor.systemYellow.withAlphaComponent(0.72)
+                } else {
+                    uiColor = UIColor.systemRed.withAlphaComponent(0.78)
+                }
+
+                let material = SimpleMaterial(
+                    color: uiColor,
+                    isMetallic: false
+                )
+                let entity = ModelEntity(
+                    mesh: mesh,
+                    materials: [material]
+                )
+                entity.position = cell.position
+                anchor.addChild(entity)
+            }
+
+            view.scene.addAnchor(anchor)
+            heatmapAnchor = anchor
+        }
+
+        func removeSurfaceHeatmap() {
+            heatmapAnchor?.removeFromParent()
+            heatmapAnchor = nil
         }
 
         func handleWorldMapSaveRequest(
@@ -235,6 +303,7 @@ struct ARScannerView: UIViewRepresentable {
                ) {
                 configuration.initialWorldMap = worldMap
             }
+
             configuration.planeDetection = [.horizontal, .vertical]
             configuration.environmentTexturing = .automatic
 
@@ -300,8 +369,12 @@ struct ARScannerView: UIViewRepresentable {
                 resolution = .zero
             }
 
-            let confidence = LiDARFrameProcessor.confidenceScore(from: depth?.confidenceMap)
-            let depthStatistics = LiDARFrameProcessor.depthStatistics(from: depth?.depthMap)
+            let confidence = LiDARFrameProcessor.confidenceScore(
+                from: depth?.confidenceMap
+            )
+            let depthStatistics = LiDARFrameProcessor.depthStatistics(
+                from: depth?.depthMap
+            )
 
             if let rgbdRecorder,
                rgbdRecorder.isRecording,
@@ -322,8 +395,12 @@ struct ARScannerView: UIViewRepresentable {
             if frame.timestamp - lastPreviewTimestamp >= captureQuality.previewInterval,
                let depth {
                 lastPreviewTimestamp = frame.timestamp
-                depthPreview = LiDARFrameProcessor.depthImage(from: depth.depthMap)
-                confidencePreview = LiDARFrameProcessor.confidenceImage(from: depth.confidenceMap)
+                depthPreview = LiDARFrameProcessor.depthImage(
+                    from: depth.depthMap
+                )
+                confidencePreview = LiDARFrameProcessor.confidenceImage(
+                    from: depth.confidenceMap
+                )
             }
 
             let transform = frame.camera.transform
@@ -333,9 +410,15 @@ struct ARScannerView: UIViewRepresentable {
                 transform.columns.3.z
             )
 
-            let tracking = LiDARFrameProcessor.trackingDescription(frame.camera.trackingState)
-            let trackingNormal = LiDARFrameProcessor.isTrackingNormal(frame.camera.trackingState)
-            let points = frame.rawFeaturePoints.map { Array($0.points) } ?? []
+            let tracking = LiDARFrameProcessor.trackingDescription(
+                frame.camera.trackingState
+            )
+            let trackingNormal = LiDARFrameProcessor.isTrackingNormal(
+                frame.camera.trackingState
+            )
+            let points = frame.rawFeaturePoints.map {
+                Array($0.points)
+            } ?? []
 
             var densePoints: [SIMD3<Float>] = []
             if trackingNormal,
@@ -351,6 +434,17 @@ struct ARScannerView: UIViewRepresentable {
                     maximumDepth: 6.0
                 )
             }
+
+            var meshSurfacePoints: [SIMD3<Float>] = []
+            if trackingNormal,
+               frame.timestamp - lastMeshSurfaceTimestamp >= 0.75 {
+                lastMeshSurfaceTimestamp = frame.timestamp
+                meshSurfacePoints = sampledMeshSurfacePoints(
+                    from: frame,
+                    maxPerAnchor: captureQuality == .maximum ? 120 : 72
+                )
+            }
+
             let meshes = frame.anchors.reduce(into: 0) { count, anchor in
                 if anchor is ARMeshAnchor { count += 1 }
             }
@@ -375,9 +469,68 @@ struct ARScannerView: UIViewRepresentable {
                     depthStatistics: depthStatistics,
                     depthPreview: depthPreview,
                     confidencePreview: confidencePreview,
-                    densePoints: densePoints
+                    densePoints: densePoints,
+                    meshSurfacePoints: meshSurfacePoints
                 )
             }
+        }
+
+        private func sampledMeshSurfacePoints(
+            from frame: ARFrame,
+            maxPerAnchor: Int
+        ) -> [SIMD3<Float>] {
+            var result: [SIMD3<Float>] = []
+
+            for anchor in frame.anchors {
+                guard let meshAnchor = anchor as? ARMeshAnchor else {
+                    continue
+                }
+
+                let source = meshAnchor.geometry.vertices
+                guard source.count > 0 else { continue }
+
+                let step = max(
+                    1,
+                    source.count / max(1, maxPerAnchor)
+                )
+
+                for index in stride(
+                    from: 0,
+                    to: source.count,
+                    by: step
+                ) {
+                    let address = source.buffer.contents()
+                        .advanced(
+                            by: source.offset +
+                                source.stride * index
+                        )
+
+                    let vertex = address
+                        .assumingMemoryBound(to: SIMD3<Float>.self)
+                        .pointee
+
+                    let world = meshAnchor.transform * SIMD4<Float>(
+                        vertex.x,
+                        vertex.y,
+                        vertex.z,
+                        1
+                    )
+
+                    result.append(
+                        SIMD3<Float>(
+                            world.x,
+                            world.y,
+                            world.z
+                        )
+                    )
+
+                    if result.count >= 1_200 {
+                        return result
+                    }
+                }
+            }
+
+            return result
         }
 
         func sessionWasInterrupted(_ session: ARSession) {
@@ -392,7 +545,11 @@ struct ARScannerView: UIViewRepresentable {
             }
 
             guard running, let arView else { return }
-            runSession(on: arView, resetTracking: false, clearPointCloud: false)
+            runSession(
+                on: arView,
+                resetTracking: false,
+                clearPointCloud: false
+            )
         }
 
         func session(_ session: ARSession, didFailWithError error: Error) {
