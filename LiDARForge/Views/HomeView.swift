@@ -2,6 +2,8 @@ import ARKit
 import SwiftUI
 
 struct HomeView: View {
+    @EnvironmentObject private var appState: AppState
+
     private var supportsLiDARDepth: Bool {
         ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     }
@@ -50,6 +52,17 @@ struct HomeView: View {
                 }
             }
             .navigationTitle("LiDARForge")
+        }
+        .alert(
+            "LiDARForge",
+            isPresented: Binding(
+                get: { appState.importMessage != nil },
+                set: { if !$0 { appState.importMessage = nil } }
+            )
+        ) {
+            Button("common.ok", role: .cancel) { }
+        } message: {
+            Text(appState.importMessage ?? "")
         }
     }
 }
