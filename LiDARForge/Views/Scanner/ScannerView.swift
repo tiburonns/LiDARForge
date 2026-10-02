@@ -243,6 +243,59 @@ struct ScannerView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
+    private func missingViewpointCard(
+        _ recommendation: MissingViewpointRecommendation
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label(
+                    "viewpoint.title",
+                    systemImage: "location.north.line.fill"
+                )
+                .font(.caption.bold())
+
+                Spacer()
+
+                Text(
+                    recommendation.coverage,
+                    format: .percent.precision(.fractionLength(0))
+                )
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+            }
+
+            Text(
+                String(
+                    format: String(localized: recommendation.directionKey),
+                    recommendation.azimuthDegrees
+                )
+            )
+            .font(.subheadline.weight(.semibold))
+
+            Text(LocalizedStringKey(recommendation.elevationKey))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if !controller.surfaceCoverageCells.isEmpty {
+                HStack {
+                    Text("coverage.surface")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(
+                        controller.surfaceCoverageScore,
+                        format: .percent.precision(.fractionLength(0))
+                    )
+                    .font(.caption2.monospacedDigit())
+                }
+
+                ProgressView(value: controller.surfaceCoverageScore)
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
     private var targetReticle: some View {
         VStack {
             Spacer()
@@ -643,46 +696,131 @@ struct ScannerView: View {
                 }
             }
 
-            HStack {
-                Button {
-                    measurementMode.toggle()
-                    if !measurementMode {
-                        controller.cancelMeasurementDraft()
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack {
+                    ForEach(availableCaptureTools) { tool in
+                        captureToolControl(tool)
                     }
-                } label: {
-                    Label(
-                        measurementMode ? "measure.done" : "measure.title",
-                        systemImage: "ruler"
-                    )
-                }
-                .buttonStyle(.bordered)
 
-                Button {
-                    showHealthReport = true
-                } label: {
-                    Label("health.title", systemImage: "waveform.path.ecg")
-                }
-                .buttonStyle(.bordered)
-
-                Button {
-                    exportPointCloud()
-                } label: {
-                    Label("export.ply", systemImage: "point.3.connected.trianglepath.dotted")
-                }
-                .buttonStyle(.bordered)
-                .disabled(
-                    controller.densePointCount == 0 &&
-                    controller.accumulatedPointCount == 0
-                )
-
-                if let exportURL {
-                    ShareLink(item: exportURL) {
-                        Label("export.share", systemImage: "square.and.arrow.up")
+                    if let exportURL,
+                       appState.isEnabled(.pointCloudExport) {
+                        ShareLink(item: exportURL) {
+                            Label(
+                                "export.share",
+                                systemImage: "square.and.arrow.up"
+                            )
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.bordered)
                 }
             }
         }
+    }
+
+    private var availableCaptureTools: [WorkspaceTool] {
+        appState.captureTools.filter { tool in
+            guard appState.isEnabled(tool) else { return false }
+
+            if tool == .sourceArchive, projectType == .video {
+                return false
+            }
+
+            return true
+        }
+    }
+
+    @ViewBuilder
+    private func captureToolControl(_ tool: WorkspaceTool) -> some View {
+        switch tool {
+        case .measurements:
+            Button {
+                measurementMode.toggle()
+                if !measurementMode {
+                    controller.cancelMeasurementDraft()
+                }
+            } label: {
+                Label(
+                    measurementMode ? "measure.done" : "measure.title",
+                    systemImage: "ruler"
+                )
+            }
+            .buttonStyle(.bordered)
+
+        case .scanHealth:
+            Button {
+                showHealthReport = true
+            } label: {
+                Label(
+                    "health.title",
+                    systemImage: "waveform.path.ecg"
+                )
+            }
+            .buttonStyle(.bordered)
+
+        case .coverageHeatmap:
+            Button {
+                showSurfaceHeatmap.toggle()
+            } label: {
+                Label(
+                    showSurfaceHeatmap
+                        ? "coverage.hide3d"
+                        : "coverage.show3d",
+                    systemImage: "square.grid.3x3.fill"
+                )
+            }
+            .buttonStyle(.bordered)
+
+        case .pointCloudExport:
+            Button {
+                exportPointCloud()
+            } label: {
+                Label(
+                    "export.ply",
+                    systemImage: "point.3.connected.trianglepath.dotted"
+                )
+            }
+            .buttonStyle(.bordered)
+            .disabled(
+                controller.densePointCount == 0 &&
+                controller.accumulatedPointCount == 0
+            )
+
+        case .sourceArchive:
+            Button {
+                if sourceRecorder.isRecording {
+                    sourceRecorder.stop()
+                } else {
+                    startSourceArchiveIfNeeded(force: true)
+                }
+            } label: {
+                Label(
+                    sourceRecorder.isRecording
+                        ? "source.stop"
+                        : "source.start",
+                    systemImage: sourceRecorder.isRecording
+                        ? "archivebox.fill"
+                        : "archivebox"
+                )
+            }
+            .buttonStyle(.bordered)
+
+        default:
+            EmptyView()
+        }
+    }
+
+    private func startSourceArchiveIfNeeded(force: Bool = false) {
+        guard projectType != .video,
+              !sourceRecorder.isRecording,
+              !sourceRecorder.isFinalizing,
+              force || appState.isEnabled(.sourceArchive) else {
+            return
+        }
+
+        sourceRecorder.start(
+            projectID: projectID,
+            destination: .projectSources(stage: "capture")
+        )
     }
 
     private func persist(
