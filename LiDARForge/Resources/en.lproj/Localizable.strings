@@ -53,6 +53,8 @@
 "coach.moveSlower" = "Move more slowly to preserve tracking and detail.";
 "coach.moveCloser" = "Move closer to bring the center area into useful depth range.";
 "coach.moveFarther" = "Move farther away; the center area is too close for this capture profile.";
+"coach.lockTarget" = "Tap the object to lock the capture target before continuing.";
+"coach.fillCoverage" = "Move around the object and fill the red or yellow coverage sectors.";
 "coach.addVisualDetail" = "Aim at textured edges or detailed surfaces to improve tracking.";
 "coach.improveConfidence" = "Change angle or distance to improve depth confidence.";
 "coach.changeViewpoint" = "Change viewpoint; this area is already well observed.";
