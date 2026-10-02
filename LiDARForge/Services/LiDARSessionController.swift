@@ -249,6 +249,67 @@ final class LiDARSessionController: ObservableObject {
         measurements = Array(saved.prefix(20))
     }
 
+    func restoreSurfaceCoverage(
+        _ saved: [SurfaceCoverageRecord]
+    ) {
+        guard surfaceCoverageStates.isEmpty else { return }
+
+        let voxelSize: Float = projectType == .object ? 0.06 : 0.12
+
+        for record in saved {
+            let position = SIMD3<Float>(
+                record.x,
+                record.y,
+                record.z
+            )
+            let key = PointKey(
+                x: Int((position.x / voxelSize).rounded()),
+                y: Int((position.y / voxelSize).rounded()),
+                z: Int((position.z / voxelSize).rounded())
+            )
+
+            let observations = max(
+                0,
+                min(12, Int((record.coverage * 5.0).rounded()))
+            )
+
+            surfaceCoverageStates[key] = SurfaceCoverageState(
+                position: position,
+                observations: observations,
+                confidenceTotal:
+                    record.confidence * Double(max(observations, 1))
+            )
+        }
+
+        refreshSurfaceCoveragePublishedState()
+    }
+
+    func restoreTarget(_ target: ScanTargetRecord) {
+        targetPosition = SIMD3<Float>(
+            target.x,
+            target.y,
+            target.z
+        )
+        targetRadiusMeters = min(
+            max(target.radiusMeters, 0.20),
+            3.00
+        )
+        targetLocked = true
+    }
+
+    var targetRecord: ScanTargetRecord? {
+        guard let targetPosition, targetLocked else {
+            return nil
+        }
+
+        return ScanTargetRecord(
+            x: targetPosition.x,
+            y: targetPosition.y,
+            z: targetPosition.z,
+            radiusMeters: targetRadiusMeters
+        )
+    }
+
     func reset(clearPointCloud: Bool = false) {
         orientationBins.removeAll()
         spatialCells.removeAll()
@@ -610,6 +671,10 @@ final class LiDARSessionController: ObservableObject {
             )
         }
 
+        refreshSurfaceCoveragePublishedState()
+    }
+
+    private func refreshSurfaceCoveragePublishedState() {
         guard !surfaceCoverageStates.isEmpty else {
             surfaceCoverageCells = []
             surfaceCoverageScore = 0
