@@ -3,6 +3,8 @@ import UIKit
 
 struct SensorToolView: View {
     let titleKey: String
+
+    @EnvironmentObject private var appState: AppState
     let initialMode: SensorViewMode
     let nightVision: Bool
 
@@ -22,7 +24,8 @@ struct SensorToolView: View {
             ARScannerView(
                 controller: controller,
                 viewMode: viewMode,
-                isRunning: isRunning
+                isRunning: isRunning,
+                captureQuality: appState.captureQuality
             )
             .ignoresSafeArea()
 
