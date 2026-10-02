@@ -146,6 +146,10 @@ struct ScannerView: View {
             if !appState.isEnabled(.coverageHeatmap) {
                 showSurfaceHeatmap = false
             }
+
+            if !availableViewModes.contains(viewMode) {
+                viewMode = .camera
+            }
         }
         .onChange(of: controller.worldMapData) { _, data in
             guard let data else { return }
@@ -626,7 +630,7 @@ struct ScannerView: View {
     private var modePicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack {
-                ForEach(SensorViewMode.allCases) { mode in
+                ForEach(availableViewModes) { mode in
                     Button {
                         viewMode = mode
                     } label: {
@@ -646,6 +650,28 @@ struct ScannerView: View {
                 }
             }
         }
+    }
+
+    private var availableViewModes: [SensorViewMode] {
+        var modes: [SensorViewMode] = [.camera]
+
+        if appState.isEnabled(.featurePoints) {
+            modes.append(.cameraPoints)
+        }
+        if appState.isEnabled(.meshView) {
+            modes.append(.mesh)
+        }
+        if appState.isEnabled(.depthView) {
+            modes.append(.depth)
+        }
+        if appState.isEnabled(.confidenceView) {
+            modes.append(.confidence)
+        }
+        if appState.isEnabled(.rawInspector) {
+            modes.append(.raw)
+        }
+
+        return modes
     }
 
     private var controls: some View {
