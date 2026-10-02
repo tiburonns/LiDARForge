@@ -16,6 +16,8 @@ struct ScanMetricsSnapshot: Codable {
     let thermalDescription: String?
     let targetLocked: Bool?
     let measurementCount: Int?
+    let surfaceCoverageScore: Double?
+    let surfaceCellCount: Int?
 
     init(
         coverage: Double,
@@ -30,7 +32,9 @@ struct ScanMetricsSnapshot: Codable {
         densePointCount: Int? = nil,
         thermalDescription: String? = nil,
         targetLocked: Bool? = nil,
-        measurementCount: Int? = nil
+        measurementCount: Int? = nil,
+        surfaceCoverageScore: Double? = nil,
+        surfaceCellCount: Int? = nil
     ) {
         self.coverage = coverage
         self.confidence = confidence
@@ -45,7 +49,18 @@ struct ScanMetricsSnapshot: Codable {
         self.thermalDescription = thermalDescription
         self.targetLocked = targetLocked
         self.measurementCount = measurementCount
+        self.surfaceCoverageScore = surfaceCoverageScore
+        self.surfaceCellCount = surfaceCellCount
     }
+}
+
+struct SurfaceCoverageRecord: Identifiable, Codable {
+    let id: String
+    let x: Float
+    let y: Float
+    let z: Float
+    let coverage: Double
+    let confidence: Double
 }
 
 struct ScanProject: Identifiable, Codable {
@@ -57,4 +72,5 @@ struct ScanProject: Identifiable, Codable {
     var stage: CaptureStage
     var metrics: ScanMetricsSnapshot
     var measurements: [SpatialMeasurement]? = nil
+    var surfaceCoverage: [SurfaceCoverageRecord]? = nil
 }
