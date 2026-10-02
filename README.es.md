@@ -35,6 +35,7 @@ La primera implementación incluye:
 - Modos de calidad Rápido / Equilibrado / Máximo
 - Acumulación de nube de puntos densa desde SceneDepth con respaldo de puntos AR
 - Métricas de tracking y malla
+- Selector personalizable de funciones y herramientas con visibilidad y orden persistentes
 
 ## Hito actual — 0.2 Inteligencia de captura
 
@@ -58,6 +59,9 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Flujo de apariencia con RealityKit ObjectCaptureSession: detección, pasadas guiadas, vista de nube de puntos, nueva pasada/volteo y compartición
 - Grabación de datasets RGB-D locales dentro de paquetes `.lidarforge`
 - Persistencia de nubes de puntos por proyecto y paquetes `.lidarforge` compartibles
+- Persistencia de ARWorldMap, ROI del objeto, mediciones y muestras 3D de cobertura por superficie
+- Archivos de fuentes RGB/profundidad/confianza/pose/intrínsecos/timestamps/IMU por proyecto para reprocesado posterior
+- Coach de perspectiva faltante derivado de cobertura direccional y superficies de la malla
 - Pantalla de detalle de proyecto con progreso y continuación del flujo
 - Recuperación de pausa/reanudación e interrupciones sin descartar intencionalmente el escaneo actual
 - Pantalla de herramientas del sensor
@@ -67,11 +71,8 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 
 ## Próximos hitos
 
-- Heatmap de cobertura realmente proyectado sobre la malla
-- Detección de perspectivas faltantes y oclusiones
+- Refinamiento del heatmap de superficie con detección explícita de oclusiones
 - Heatmap de confianza de profundidad proyectado en la geometría
-- Persistencia de ARWorldMap / relocalización para reanudar una captura en una sesión posterior
-- Stream IMU dentro de datasets RGB-D
 - Exportación y conversión de malla
 - Pipeline OBJ / STL / GLB / XYZ / LAS
 - Exportación arquitectónica PDF / SVG / DXF
