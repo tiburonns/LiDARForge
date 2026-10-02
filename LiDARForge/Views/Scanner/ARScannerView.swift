@@ -10,6 +10,7 @@ struct ARScannerView: UIViewRepresentable {
     var allowsTargetLock: Bool = false
     var measurementMode: Bool = false
     var captureQuality: CaptureQualityMode = .balanced
+    var rgbdRecorder: RGBDRecorder?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -22,6 +23,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
         context.coordinator.setMeasurementMode(measurementMode)
         context.coordinator.setCaptureQuality(captureQuality)
+        context.coordinator.setRGBDRecorder(rgbdRecorder)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
         return view
@@ -31,6 +33,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
         context.coordinator.setMeasurementMode(measurementMode)
         context.coordinator.setCaptureQuality(captureQuality)
+        context.coordinator.setRGBDRecorder(rgbdRecorder)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
     }
@@ -48,9 +51,11 @@ struct ARScannerView: UIViewRepresentable {
         private var lastMetricsTimestamp: TimeInterval = 0
         private var lastPreviewTimestamp: TimeInterval = 0
         private var lastPointCloudTimestamp: TimeInterval = 0
+        private var lastRGBDTimestamp: TimeInterval = 0
         private var allowsTargetLock = false
         private var measurementMode = false
         private var captureQuality: CaptureQualityMode = .balanced
+        private weak var rgbdRecorder: RGBDRecorder?
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -83,6 +88,10 @@ struct ARScannerView: UIViewRepresentable {
 
         func setCaptureQuality(_ quality: CaptureQualityMode) {
             captureQuality = quality
+        }
+
+        func setRGBDRecorder(_ recorder: RGBDRecorder?) {
+            rgbdRecorder = recorder
         }
 
         @objc
@@ -229,6 +238,19 @@ struct ARScannerView: UIViewRepresentable {
 
             let confidence = LiDARFrameProcessor.confidenceScore(from: depth?.confidenceMap)
             let depthStatistics = LiDARFrameProcessor.depthStatistics(from: depth?.depthMap)
+
+            if let rgbdRecorder,
+               rgbdRecorder.isRecording,
+               frame.timestamp - lastRGBDTimestamp >= max(
+                   0.20,
+                   captureQuality.denseSampleInterval
+               ) {
+                lastRGBDTimestamp = frame.timestamp
+                rgbdRecorder.capture(
+                    frame: frame,
+                    depth: depth
+                )
+            }
 
             var depthPreview: UIImage?
             var confidencePreview: UIImage?
