@@ -73,7 +73,9 @@
 
 "export.ply" = "PLY";
 "export.share" = "Compartir";
-"export.ready" = "La nube PLY de puntos de características está lista para compartir.";
+"export.ready" = "La nube de puntos PLY está lista para compartir.";
+"export.readyDense" = "La nube PLY densa generada desde SceneDepth LiDAR está lista para compartir.";
+"export.readySparse" = "No hubo profundidad LiDAR disponible; se generó una nube PLY dispersa con puntos AR.";
 "export.failed" = "No se pudo exportar la nube de puntos.";
 
 "settings.title" = "Ajustes";
