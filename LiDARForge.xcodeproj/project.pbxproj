@@ -24,6 +24,7 @@
 		A1000000000000000000000F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000001 /* Localizable.strings */; };
 		A10000000000000000000010 /* PointCloudExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* PointCloudExporter.swift */; };
 		A10000000000000000000011 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* ProjectsView.swift */; };
+		A10000000000000000000012 /* RoomPlanProjectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* RoomPlanProjectView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		B10000000000000000000012 /* LiDARForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiDARForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000000000000000000013 /* PointCloudExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Services/PointCloudExporter.swift; sourceTree = "<group>"; };
 		B10000000000000000000014 /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Views/ProjectsView.swift; sourceTree = "<group>"; };
+		B10000000000000000000015 /* RoomPlanProjectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Views/RoomPlanProjectView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +75,7 @@
 				B10000000000000000000013 /* PointCloudExporter.swift */,
 				B10000000000000000000008 /* HomeView.swift */,
 				B10000000000000000000014 /* ProjectsView.swift */,
+				B10000000000000000000015 /* RoomPlanProjectView.swift */,
 				B10000000000000000000009 /* NewProjectView.swift */,
 				B1000000000000000000000A /* SettingsView.swift */,
 				B1000000000000000000000B /* ToolsView.swift */,
@@ -173,6 +176,7 @@
 				A10000000000000000000010 /* PointCloudExporter.swift in Sources */,
 				A10000000000000000000008 /* HomeView.swift in Sources */,
 				A10000000000000000000011 /* ProjectsView.swift in Sources */,
+				A10000000000000000000012 /* RoomPlanProjectView.swift in Sources */,
 				A10000000000000000000009 /* NewProjectView.swift in Sources */,
 				A1000000000000000000000A /* SettingsView.swift in Sources */,
 				A1000000000000000000000B /* ToolsView.swift in Sources */,
