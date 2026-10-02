@@ -28,6 +28,8 @@ The first implementation includes a live AR/LiDAR workspace with:
 - Raw sensor metrics
 - Night-vision-style depth visualization
 - Capture coverage estimate
+- Project-aware speed and distance guidance
+- Dense SceneDepth point-cloud accumulation with sparse AR fallback
 - Tracking and mesh statistics
 
 ## Current milestone — 0.1 Foundation
@@ -44,6 +46,9 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Live feature-point / mesh / tracking metrics
 - Live depth and confidence-map previews
 - Project snapshot persistence as JSON
+- Saved-project library with delete support
+- Dense SceneDepth PLY export and sharing
+- Pause/resume and interruption recovery without intentionally discarding the current scan
 - Sensor tools screen
 - CI build workflow
 
@@ -56,8 +61,8 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Surface-aware coverage heatmap
 - RGB-D recording
 - Multi-room building projects
-- Point-cloud and mesh export
-- USDZ / PLY / OBJ / GLB export pipeline
+- Mesh export
+- USDZ / OBJ / GLB export pipeline
 - Raw frame dataset export
 - Project package format (`.lidarforge`)
 
