@@ -29,6 +29,10 @@ The first implementation includes a live AR/LiDAR workspace with:
 - Night-vision-style depth visualization
 - Capture coverage estimate
 - Project-aware speed and distance guidance
+- Tap-to-lock object ROI with background filtering
+- 24-sector directional coverage map for object capture
+- Scan Health report with actionable quality checks
+- Fast / Balanced / Maximum capture quality modes
 - Dense SceneDepth point-cloud accumulation with sparse AR fallback
 - Tracking and mesh statistics
 
@@ -47,6 +51,8 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Live depth and confidence-map previews
 - Project snapshot persistence as JSON
 - Saved-project library with delete support
+- RoomPlan structural capture for Interior projects
+- RoomPlan room summary and USDZ mesh export
 - Dense SceneDepth PLY export and sharing
 - Pause/resume and interruption recovery without intentionally discarding the current scan
 - Sensor tools screen
@@ -56,7 +62,7 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 
 ## Planned next milestones
 
-- RoomPlan interior capture
+- Room completeness coaching and 2D floor-plan preview
 - Object Capture guided photogrammetry
 - Surface-aware coverage heatmap
 - RGB-D recording
