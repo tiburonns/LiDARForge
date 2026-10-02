@@ -137,6 +137,7 @@ struct ARScannerView: UIViewRepresentable {
             }
 
             let confidence = LiDARFrameProcessor.confidenceScore(from: depth?.confidenceMap)
+            let depthStatistics = LiDARFrameProcessor.depthStatistics(from: depth?.depthMap)
 
             var depthPreview: UIImage?
             var confidencePreview: UIImage?
@@ -176,6 +177,7 @@ struct ARScannerView: UIViewRepresentable {
                     timestamp: frame.timestamp,
                     depthResolution: resolution,
                     confidence: confidence,
+                    depthStatistics: depthStatistics,
                     depthPreview: depthPreview,
                     confidencePreview: confidencePreview
                 )
