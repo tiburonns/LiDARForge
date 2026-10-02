@@ -19,6 +19,8 @@ SwiftUI views:
 - Guided scanner
 - Sensor tools
 - Settings
+- RoomPlan interior structure capture
+- Scan Health report
 
 ### Capture engine
 
@@ -43,7 +45,9 @@ The 0.1 coach uses a lightweight coverage estimate derived from:
 - project-specific capture thresholds
 - depth validity, center distance, motion speed, and tracking state for live guidance
 
-This is deliberately called an **estimate**. A future milestone will replace it with a surface-aware visibility map tied to reconstructed geometry.
+For Object projects, the coach can lock a world-space target from an AR raycast. SceneDepth points outside the selected ROI radius are filtered from the dense object cloud. The app also maintains a 3 × 8 directional coverage grid around the locked target to show missing, partial, and well-observed sectors.
+
+The global coverage score is still deliberately called an **estimate**. The directional grid is useful guidance, but it is not yet the final mesh-projected visibility heatmap planned for Coverage Coach 2.
 
 ### Point-cloud pipeline
 
@@ -54,12 +58,20 @@ LiDARForge currently keeps two point sources:
 
 PLY export prefers the SceneDepth cloud.
 
+### Interior / RoomPlan pipeline
+
+Interior projects start with Apple's RoomPlan capture UI for the Structure pass. The processed CapturedRoom result is summarized into walls, doors, windows, openings, floors, and detected objects, then exported locally as a USDZ mesh. The workflow can continue directly into LiDARForge's Detail pass.
+
+### Performance profiles
+
+Fast, Balanced, and Maximum modes adjust SceneDepth sampling stride, dense-cloud sampling interval, and preview refresh rate. They are persisted in AppState and shared by project scans and sensor tools.
+
 ### Reconstruction modules
 
-Planned independent modules:
+Independent modules:
 
-- RoomPlan
-- Object Capture
+- RoomPlan (single-room Structure pass implemented)
+- Object Capture (planned)
 - point cloud
 - mesh
 - RGB-D
