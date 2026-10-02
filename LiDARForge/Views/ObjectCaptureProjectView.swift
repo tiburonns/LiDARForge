@@ -470,6 +470,12 @@ struct ObjectCaptureProjectView: View {
                     .ultraThinMaterial,
                     in: RoundedRectangle(cornerRadius: 14)
                 )
+
+            @unknown default:
+                Label(
+                    "objectCapture.failed",
+                    systemImage: "exclamationmark.triangle"
+                )
             }
         }
         .padding()
@@ -485,6 +491,7 @@ struct ObjectCaptureProjectView: View {
         case .finishing: return "objectCapture.state.finishing"
         case .completed: return "objectCapture.state.completed"
         case .failed: return "objectCapture.state.failed"
+        @unknown default: return "objectCapture.state.failed"
         }
     }
 
@@ -505,6 +512,8 @@ struct ObjectCaptureProjectView: View {
         case .completed:
             return "objectCapture.instruction.completed"
         case .failed:
+            return "objectCapture.instruction.failed"
+        @unknown default:
             return "objectCapture.instruction.failed"
         }
     }
