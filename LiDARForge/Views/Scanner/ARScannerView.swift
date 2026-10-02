@@ -284,6 +284,8 @@ struct ARScannerView: UIViewRepresentable {
                     timestamp: frame.timestamp,
                     depthResolution: resolution,
                     confidence: confidence,
+                    exposureDuration: frame.camera.exposureDuration,
+                    exposureOffset: frame.camera.exposureOffset,
                     depthStatistics: depthStatistics,
                     depthPreview: depthPreview,
                     confidencePreview: confidencePreview,
