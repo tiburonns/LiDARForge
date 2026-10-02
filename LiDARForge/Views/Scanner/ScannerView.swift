@@ -3,6 +3,7 @@ import UIKit
 
 struct ScannerView: View {
     let projectType: ProjectType
+    private let existingProject: ScanProject?
 
     @EnvironmentObject private var appState: AppState
 
@@ -21,10 +22,16 @@ struct ScannerView: View {
 
     init(
         projectType: ProjectType,
-        initialStage: CaptureStage = .structure
+        initialStage: CaptureStage = .structure,
+        existingProject: ScanProject? = nil
     ) {
         self.projectType = projectType
+        self.existingProject = existingProject
         _stage = State(initialValue: initialStage)
+        _projectID = State(initialValue: existingProject?.id ?? UUID())
+        _projectCreatedAt = State(
+            initialValue: existingProject?.createdAt ?? Date()
+        )
     }
 
     var body: some View {
@@ -93,6 +100,9 @@ struct ScannerView: View {
         .onAppear {
             controller.configure(for: projectType)
             controller.setStage(stage)
+            if let saved = existingProject?.measurements {
+                controller.restoreMeasurements(saved)
+            }
         }
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
@@ -639,6 +649,18 @@ struct ScannerView: View {
         Task {
             do {
                 _ = try await ProjectStore.shared.save(project)
+
+                let pointCloud = await MainActor.run {
+                    controller.bestPointCloudSnapshot()
+                }
+
+                if !pointCloud.points.isEmpty {
+                    _ = try? await ProjectStore.shared.savePointCloud(
+                        pointCloud,
+                        projectID: projectID
+                    )
+                }
+
                 await MainActor.run {
                     if showConfirmation {
                         statusMessage = String(localized: "project.saved")
