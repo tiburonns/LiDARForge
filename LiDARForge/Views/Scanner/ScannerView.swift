@@ -11,8 +11,8 @@ struct ScannerView: View {
     @State private var statusMessage: String?
     @State private var exportURL: URL?
 
-    private let projectID = UUID()
-    private let projectCreatedAt = Date()
+    @State private var projectID = UUID()
+    @State private var projectCreatedAt = Date()
 
     var body: some View {
         ZStack {
