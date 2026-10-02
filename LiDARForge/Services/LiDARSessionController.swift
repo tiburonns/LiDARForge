@@ -52,7 +52,7 @@ enum CaptureGuidance: String {
     }
 }
 
-struct SpatialMeasurement: Identifiable {
+struct SpatialMeasurement: Identifiable, Codable {
     let id = UUID()
     let distanceMeters: Double
     let createdAt = Date()
