@@ -293,8 +293,10 @@ final class RGBDRecorder: ObservableObject {
 
         for row in 0..<height {
             data.append(
-                base.advanced(by: row * bytesPerRow),
-                count: rowBytes
+                Data(
+                    bytes: base.advanced(by: row * bytesPerRow),
+                    count: rowBytes
+                )
             )
         }
 
@@ -322,8 +324,10 @@ final class RGBDRecorder: ObservableObject {
 
         for row in 0..<height {
             data.append(
-                base.advanced(by: row * bytesPerRow),
-                count: width
+                Data(
+                    bytes: base.advanced(by: row * bytesPerRow),
+                    count: width
+                )
             )
         }
 
