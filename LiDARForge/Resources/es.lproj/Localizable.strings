@@ -53,6 +53,8 @@
 "coach.moveSlower" = "Muévete más despacio para conservar tracking y detalle.";
 "coach.moveCloser" = "Acércate para colocar la zona central dentro del rango útil de profundidad.";
 "coach.moveFarther" = "Aléjate; la zona central está demasiado cerca para este perfil de captura.";
+"coach.lockTarget" = "Toca el objeto para fijar el objetivo antes de continuar.";
+"coach.fillCoverage" = "Muévete alrededor del objeto y completa los sectores rojos o amarillos.";
 "coach.addVisualDetail" = "Apunta a bordes o superficies con detalle para mejorar el tracking.";
 "coach.improveConfidence" = "Cambia el ángulo o la distancia para mejorar la confianza de profundidad.";
 "coach.changeViewpoint" = "Cambia de perspectiva; esta zona ya está bien observada.";
