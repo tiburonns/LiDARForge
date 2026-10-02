@@ -16,6 +16,13 @@
 - [x] Three-pass guided workflow
 - [x] First capture coverage estimate
 - [x] Local project snapshot JSON
+- [x] Saved-project library and deletion
+- [x] Pause/resume without resetting the active AR session
+- [x] AR interruption recovery hooks
+- [x] Project-specific capture profiles
+- [x] Distance-aware capture coaching from SceneDepth
+- [x] Dense SceneDepth point-cloud accumulation
+- [x] PLY point-cloud export with sparse AR fallback
 - [x] CI build workflow
 
 ## 0.2 — Interior
@@ -60,7 +67,7 @@
 
 ## 0.7 — Export
 
-- [ ] PLY
+- [x] PLY point cloud
 - [ ] XYZ
 - [ ] LAS
 - [ ] USDZ
