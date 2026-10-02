@@ -15,6 +15,7 @@ struct ScanMetricsSnapshot: Codable {
     let densePointCount: Int?
     let thermalDescription: String?
     let targetLocked: Bool?
+    let measurementCount: Int?
 
     init(
         coverage: Double,
@@ -28,7 +29,8 @@ struct ScanMetricsSnapshot: Codable {
         centerDistanceMeters: Double? = nil,
         densePointCount: Int? = nil,
         thermalDescription: String? = nil,
-        targetLocked: Bool? = nil
+        targetLocked: Bool? = nil,
+        measurementCount: Int? = nil
     ) {
         self.coverage = coverage
         self.confidence = confidence
@@ -42,6 +44,7 @@ struct ScanMetricsSnapshot: Codable {
         self.densePointCount = densePointCount
         self.thermalDescription = thermalDescription
         self.targetLocked = targetLocked
+        self.measurementCount = measurementCount
     }
 }
 
