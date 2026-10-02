@@ -1,0 +1,63 @@
+"home.capture" = "Captura";
+"home.newProject" = "Nuevo proyecto";
+"home.tools" = "Herramientas";
+"home.sensorTools" = "Herramientas del sensor";
+"home.settings" = "Ajustes";
+
+"lidar.unsupported" = "Este dispositivo no reporta compatibilidad con Scene Depth LiDAR. Las herramientas del sensor estarán limitadas.";
+
+"project.object" = "Objeto";
+"project.object.subtitle" = "Objetos, piezas, muebles y vehículos.";
+"project.interior" = "Interior";
+"project.interior.subtitle" = "Habitaciones, paredes, aberturas y espacios interiores.";
+"project.exterior" = "Exterior";
+"project.exterior.subtitle" = "Fachadas, patios, exteriores y estructuras.";
+"project.building" = "Edificio";
+"project.building.subtitle" = "Captura arquitectónica y de varias habitaciones.";
+"project.video" = "Video 3D";
+"project.video.subtitle" = "Base para captura RGB-D y video espacial.";
+
+"stage.structure" = "Estructura";
+"stage.structure.instruction" = "Captura la forma principal, bordes y escala. Muévete de forma estable y cubre distintas alturas.";
+"stage.detail" = "Detalle";
+"stage.detail.instruction" = "Acércate a las zonas incompletas y agrega vistas alrededor de bordes, huecos y oclusiones.";
+"stage.appearance" = "Apariencia";
+"stage.appearance.instruction" = "Captura cobertura visual limpia para texturas. Evita desenfoque, reflejos fuertes y cambios grandes de exposición.";
+
+"sensor.camera" = "Cámara";
+"sensor.cameraPoints" = "Puntos";
+"sensor.mesh" = "Malla";
+"sensor.depth" = "Profundidad";
+"sensor.confidence" = "Confianza";
+"sensor.raw" = "Crudo";
+"sensor.mode" = "Vista del sensor";
+
+"tool.nightVision" = "Visión nocturna LiDAR";
+"tool.depth" = "Vista de profundidad";
+"tool.confidence" = "Mapa de confianza";
+"tool.points" = "Puntos de características";
+"tool.mesh" = "Malla LiDAR";
+"tool.raw" = "Inspector crudo del sensor";
+
+"metric.coverage" = "Cobertura";
+"metric.confidence" = "Confianza";
+"metric.mesh" = "Malla";
+"metric.points" = "Puntos";
+"metric.tracking" = "Tracking";
+
+"scan.pause" = "Pausar";
+"scan.resume" = "Continuar";
+"scan.nextPass" = "Siguiente pasada";
+"scan.save" = "Guardar";
+"project.saved" = "Snapshot del proyecto guardado";
+"common.ok" = "OK";
+
+"settings.title" = "Ajustes";
+"settings.language" = "Idioma";
+"settings.about" = "Acerca de";
+"settings.version" = "Versión";
+"settings.processing" = "Procesamiento";
+"settings.localFirst" = "Local-first";
+"language.system" = "Sistema";
+"language.english" = "English";
+"language.spanish" = "Español";
