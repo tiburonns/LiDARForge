@@ -14,6 +14,8 @@ enum CaptureGuidance: String {
     case moveFarther
     case lockTarget
     case fillCoverage
+    case holdSteady
+    case improveLighting
     case addVisualDetail
     case improveConfidence
     case changeViewpoint
@@ -30,6 +32,8 @@ enum CaptureGuidance: String {
         case .moveFarther: return "coach.moveFarther"
         case .lockTarget: return "coach.lockTarget"
         case .fillCoverage: return "coach.fillCoverage"
+        case .holdSteady: return "coach.holdSteady"
+        case .improveLighting: return "coach.improveLighting"
         case .addVisualDetail: return "coach.addVisualDetail"
         case .improveConfidence: return "coach.improveConfidence"
         case .changeViewpoint: return "coach.changeViewpoint"
@@ -48,6 +52,8 @@ enum CaptureGuidance: String {
         case .moveFarther: return "arrow.up.left.and.arrow.down.right"
         case .lockTarget: return "scope"
         case .fillCoverage: return "arrow.triangle.2.circlepath"
+        case .holdSteady: return "camera.metering.center.weighted"
+        case .improveLighting: return "sun.max.trianglebadge.exclamationmark"
         case .addVisualDetail: return "sparkles"
         case .improveConfidence: return "scope"
         case .changeViewpoint: return "arrow.triangle.2.circlepath"
@@ -97,11 +103,14 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var coverageSectors = Array(repeating: 0.0, count: 24)
     @Published private(set) var measurements: [SpatialMeasurement] = []
     @Published private(set) var measurementDraftPointCount = 0
+    @Published private(set) var exposureDurationSeconds: Double = 0
+    @Published private(set) var exposureOffset: Float = 0
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
     private var profile = CaptureProfile.sensor
     private var projectType: ProjectType?
+    private var captureStage: CaptureStage = .structure
     private var orientationBins = Set<String>()
     private var spatialCells = Set<String>()
     private var pointKeys = Set<PointKey>()
@@ -126,6 +135,10 @@ final class LiDARSessionController: ObservableObject {
         self.projectType = projectType
         profile = projectType.captureProfile
         targetRadiusMeters = projectType == .object ? 0.75 : 1.50
+    }
+
+    func setStage(_ stage: CaptureStage) {
+        captureStage = stage
     }
 
     func lockTarget(position: SIMD3<Float>, cameraPosition: SIMD3<Float>?) {
@@ -242,6 +255,8 @@ final class LiDARSessionController: ObservableObject {
         timestamp: TimeInterval,
         depthResolution: CGSize,
         confidence: Double?,
+        exposureDuration: TimeInterval,
+        exposureOffset: Float,
         depthStatistics: DepthStatistics,
         depthPreview: UIImage?,
         confidencePreview: UIImage?,
@@ -252,6 +267,8 @@ final class LiDARSessionController: ObservableObject {
         trackingDescription = tracking
         self.depthResolution = depthResolution
         self.confidence = confidence
+        exposureDurationSeconds = exposureDuration
+        self.exposureOffset = exposureOffset
         centerDistanceMeters = depthStatistics.centerDistance
         depthValidRatio = depthStatistics.validRatio
 
@@ -467,6 +484,20 @@ final class LiDARSessionController: ObservableObject {
 
         if motionSpeed > profile.maxSpeed {
             return .moveSlower
+        }
+
+        if captureStage == .appearance {
+            let blurRisk =
+                exposureDurationSeconds > (1.0 / 30.0) &&
+                motionSpeed > 0.12
+
+            if blurRisk {
+                return .holdSteady
+            }
+
+            if abs(exposureOffset) > 1.5 {
+                return .improveLighting
+            }
         }
 
         if let centerDistance {
