@@ -105,6 +105,8 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var measurementDraftPointCount = 0
     @Published private(set) var exposureDurationSeconds: Double = 0
     @Published private(set) var exposureOffset: Float = 0
+    @Published private(set) var worldMapData: Data?
+    @Published private(set) var worldMapSaveRequestID = UUID()
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
@@ -247,6 +249,14 @@ final class LiDARSessionController: ObservableObject {
 
     func setSessionError(_ message: String?) {
         sessionError = message
+    }
+
+    func requestWorldMapSave() {
+        worldMapSaveRequestID = UUID()
+    }
+
+    func receiveWorldMapData(_ data: Data) {
+        worldMapData = data
     }
 
     func update(
