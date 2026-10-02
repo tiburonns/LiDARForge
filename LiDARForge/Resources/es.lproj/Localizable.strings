@@ -87,3 +87,30 @@
 "language.system" = "Sistema";
 "language.english" = "English";
 "language.spanish" = "Español";
+"target.title" = "Objetivo";
+"target.tapToLock" = "Toca el sujeto para fijar el objetivo del escaneo";
+"target.locked" = "Objetivo fijado";
+"target.notLocked" = "Sin fijar";
+"target.clear" = "Quitar";
+"target.radius" = "Radio ROI";
+"target.status" = "Estado";
+
+"coverage.map" = "Mapa de cobertura";
+"coverage.directional" = "Cobertura direccional de superficie";
+"coverage.missing" = "Faltante";
+"coverage.partial" = "Parcial";
+"coverage.good" = "Buena";
+
+"health.title" = "Salud del escaneo";
+"health.overall" = "Calidad general de captura";
+"health.capture" = "Calidad de captura";
+"health.depthValidity" = "Profundidad válida";
+"health.pointDensity" = "Densidad de puntos";
+"health.densePoints" = "Puntos densos";
+"health.recommendation" = "Recomendación";
+"health.recommend.tracking" = "Recupera un tracking estable antes de terminar esta pasada.";
+"health.recommend.depth" = "Cambia el ángulo o la distancia para obtener más profundidad LiDAR válida.";
+"health.recommend.target" = "Fija el objeto para excluir mejor la geometría del fondo.";
+"health.recommend.coverage" = "Continúa alrededor del sujeto y completa los sectores rojos o amarillos.";
+"health.recommend.density" = "Haz otra pasada lenta para aumentar el detalle geométrico.";
+"health.recommend.ready" = "La calidad de captura es suficiente para continuar a la siguiente etapa.";
