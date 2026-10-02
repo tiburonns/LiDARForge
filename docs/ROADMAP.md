@@ -27,6 +27,7 @@
 - [x] Scan Health report
 - [x] Object target lock and ROI filtering
 - [x] 24-sector object coverage map
+- [x] customizable tool selector, visibility, and ordering
 - [x] CI build workflow
 
 ## 0.2 — Capture Intelligence & Interior
@@ -48,8 +49,8 @@
 ## 0.4 — Coverage Coach 2
 
 - [x] directional object coverage heatmap
-- [ ] mesh-projected surface-aware coverage heatmap
-- [ ] missing-viewpoint detection
+- [x] mesh-sampled world-space surface coverage heatmap
+- [x] missing-viewpoint detection and directional guidance
 - [ ] occlusion detection
 - [ ] depth-confidence heatmap projected into the mesh
 - [x] motion-blur / exposure warnings
@@ -87,8 +88,8 @@
 - [x] persistent per-project point cloud artifact
 - [x] shareable .lidarforge project package
 - [x] resume workflow while preserving project identity and measurements
-- [ ] persisted ARWorldMap for later-session relocalization
-- [ ] source RGB / depth / confidence artifacts attached to ordinary scan projects
+- [x] persisted ARWorldMap for later-session relocalization
+- [x] source RGB / depth / confidence / pose / intrinsics / timestamp / IMU artifacts attached to ordinary scan projects
 
 ## 1.0
 
