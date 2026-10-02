@@ -40,6 +40,8 @@ struct NewProjectView: View {
     private func destination(for type: ProjectType) -> some View {
         if type == .interior {
             RoomPlanProjectView(projectType: type)
+        } else if type == .building {
+            BuildingRoomPlanProjectView()
         } else {
             ScannerView(projectType: type)
         }
