@@ -77,6 +77,20 @@ struct DepthStatistics {
     static let unavailable = DepthStatistics(centerDistance: nil, validRatio: 0)
 }
 
+struct SurfaceCoverageCell: Identifiable {
+    let id: String
+    let position: SIMD3<Float>
+    let coverage: Double
+    let confidence: Double
+}
+
+struct MissingViewpointRecommendation {
+    let directionKey: String
+    let azimuthDegrees: Int
+    let elevationKey: String
+    let coverage: Double
+}
+
 @MainActor
 final class LiDARSessionController: ObservableObject {
     @Published private(set) var coverage: Double = 0
@@ -101,6 +115,9 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var targetDistanceMeters: Double?
     @Published private(set) var targetRadiusMeters: Double = 0.75
     @Published private(set) var coverageSectors = Array(repeating: 0.0, count: 24)
+    @Published private(set) var surfaceCoverageCells: [SurfaceCoverageCell] = []
+    @Published private(set) var surfaceCoverageScore: Double = 0
+    @Published private(set) var missingViewpointRecommendation: MissingViewpointRecommendation?
     @Published private(set) var measurements: [SpatialMeasurement] = []
     @Published private(set) var measurementDraftPointCount = 0
     @Published private(set) var exposureDurationSeconds: Double = 0
@@ -121,6 +138,7 @@ final class LiDARSessionController: ObservableObject {
     private var densePointCloudPoints: [SIMD3<Float>] = []
     private var targetPosition: SIMD3<Float>?
     private var coverageSectorHits = Array(repeating: 0, count: 24)
+    private var surfaceCoverageStates: [PointKey: SurfaceCoverageState] = [:]
     private var measurementStart: SIMD3<Float>?
     private var startedAt = Date()
     private var lastPosition: SIMD3<Float>?
@@ -131,6 +149,23 @@ final class LiDARSessionController: ObservableObject {
         let x: Int
         let y: Int
         let z: Int
+
+        var id: String { "\(x):\(y):\(z)" }
+    }
+
+    private struct SurfaceCoverageState {
+        var position: SIMD3<Float>
+        var observations: Int
+        var confidenceTotal: Double
+
+        var coverage: Double {
+            min(Double(observations) / 5.0, 1.0)
+        }
+
+        var confidence: Double {
+            guard observations > 0 else { return 0 }
+            return min(max(confidenceTotal / Double(observations), 0), 1)
+        }
     }
 
     func configure(for projectType: ProjectType) {
@@ -238,6 +273,10 @@ final class LiDARSessionController: ObservableObject {
 
         coverageSectorHits = Array(repeating: 0, count: 24)
         coverageSectors = Array(repeating: 0, count: 24)
+        surfaceCoverageStates.removeAll(keepingCapacity: true)
+        surfaceCoverageCells = []
+        surfaceCoverageScore = 0
+        missingViewpointRecommendation = nil
     }
 
     func setInterrupted(_ interrupted: Bool) {
@@ -275,7 +314,8 @@ final class LiDARSessionController: ObservableObject {
         depthStatistics: DepthStatistics,
         depthPreview: UIImage?,
         confidencePreview: UIImage?,
-        densePoints: [SIMD3<Float>] = []
+        densePoints: [SIMD3<Float>] = [],
+        meshSurfacePoints: [SIMD3<Float>] = []
     ) {
         featurePointCount = featurePoints.count
         meshAnchorCount = meshAnchors
@@ -297,6 +337,11 @@ final class LiDARSessionController: ObservableObject {
         updateMotion(position: cameraPosition, timestamp: timestamp)
         accumulate(points: featurePoints)
         accumulateDense(points: densePoints)
+        updateSurfaceCoverage(
+            meshPoints: meshSurfacePoints,
+            observedPoints: densePoints,
+            confidence: confidence
+        )
 
         let yawBin = Int(((Double(yaw) + .pi) / (2 * .pi) * 12).rounded(.down))
         let pitchBand = Int(((Double(pitch) + (.pi / 2)) / .pi * 3).rounded(.down))
@@ -325,10 +370,21 @@ final class LiDARSessionController: ObservableObject {
             : coverageSectors.reduce(0, +) / Double(coverageSectors.count)
 
         if projectType == .object, targetLocked {
+            let surfaceWeight = surfaceCoverageCells.isEmpty ? 0.0 : 0.20
+            let baseWeight = surfaceCoverageCells.isEmpty ? 0.60 : 0.45
+            let directionalWeight = surfaceCoverageCells.isEmpty ? 0.40 : 0.35
+
             coverage = min(
                 1,
-                baseCoverage * 0.60 +
-                directionalCoverage * 0.40
+                baseCoverage * baseWeight +
+                directionalCoverage * directionalWeight +
+                surfaceCoverageScore * surfaceWeight
+            )
+        } else if !surfaceCoverageCells.isEmpty {
+            coverage = min(
+                1,
+                baseCoverage * 0.75 +
+                surfaceCoverageScore * 0.25
             )
         } else {
             coverage = baseCoverage
@@ -343,12 +399,22 @@ final class LiDARSessionController: ObservableObject {
             projectType != .object ||
             (targetLocked && wellCoveredSectors >= 14)
 
+        let surfaceReady =
+            surfaceCoverageCells.isEmpty ||
+            surfaceCoverageScore >= 0.55
+
         recommendedReady =
             coverage >= profile.targetCoverage &&
             confidenceReady &&
             depthReady &&
             trackingIsNormal &&
-            targetReady
+            targetReady &&
+            surfaceReady
+
+        updateMissingViewpointRecommendation(
+            cameraPosition: cameraPosition,
+            cameraYaw: yaw
+        )
 
         captureGuidance = guidance(
             trackingIsNormal: trackingIsNormal,
@@ -473,6 +539,201 @@ final class LiDARSessionController: ObservableObject {
         }
 
         densePointCount = densePointCloudPoints.count
+    }
+
+    private func updateSurfaceCoverage(
+        meshPoints: [SIMD3<Float>],
+        observedPoints: [SIMD3<Float>],
+        confidence: Double?
+    ) {
+        let voxelSize: Float = projectType == .object ? 0.06 : 0.12
+
+        func key(for point: SIMD3<Float>) -> PointKey {
+            PointKey(
+                x: Int((point.x / voxelSize).rounded()),
+                y: Int((point.y / voxelSize).rounded()),
+                z: Int((point.z / voxelSize).rounded())
+            )
+        }
+
+        for point in meshPoints.prefix(1_200) {
+            let pointKey = key(for: point)
+
+            if surfaceCoverageStates[pointKey] == nil {
+                surfaceCoverageStates[pointKey] = SurfaceCoverageState(
+                    position: point,
+                    observations: 0,
+                    confidenceTotal: 0
+                )
+            }
+        }
+
+        let frameConfidence = confidence ?? 0.5
+
+        for point in observedPoints {
+            let pointKey = key(for: point)
+
+            if var state = surfaceCoverageStates[pointKey] {
+                state.observations = min(state.observations + 1, 12)
+                state.confidenceTotal += frameConfidence
+                state.position = (state.position + point) * 0.5
+                surfaceCoverageStates[pointKey] = state
+            } else {
+                surfaceCoverageStates[pointKey] = SurfaceCoverageState(
+                    position: point,
+                    observations: 1,
+                    confidenceTotal: frameConfidence
+                )
+            }
+        }
+
+        if surfaceCoverageStates.count > 6_000 {
+            let retained = surfaceCoverageStates
+                .sorted { lhs, rhs in
+                    lhs.value.coverage > rhs.value.coverage
+                }
+                .prefix(4_500)
+            surfaceCoverageStates = Dictionary(
+                uniqueKeysWithValues: retained
+            )
+        }
+
+        guard !surfaceCoverageStates.isEmpty else {
+            surfaceCoverageCells = []
+            surfaceCoverageScore = 0
+            return
+        }
+
+        let allStates = Array(surfaceCoverageStates)
+        surfaceCoverageScore =
+            allStates.reduce(0.0) { $0 + $1.value.coverage } /
+            Double(allStates.count)
+
+        let weakest = allStates
+            .sorted {
+                if $0.value.coverage == $1.value.coverage {
+                    return $0.value.confidence < $1.value.confidence
+                }
+                return $0.value.coverage < $1.value.coverage
+            }
+            .prefix(240)
+
+        let strongest = allStates
+            .filter { $0.value.coverage >= 0.66 }
+            .prefix(80)
+
+        var selected: [PointKey: SurfaceCoverageState] = [:]
+        for entry in weakest {
+            selected[entry.key] = entry.value
+        }
+        for entry in strongest {
+            selected[entry.key] = entry.value
+        }
+
+        surfaceCoverageCells = selected.map { key, state in
+            SurfaceCoverageCell(
+                id: key.id,
+                position: state.position,
+                coverage: state.coverage,
+                confidence: state.confidence
+            )
+        }
+    }
+
+    private func updateMissingViewpointRecommendation(
+        cameraPosition: SIMD3<Float>,
+        cameraYaw: Float
+    ) {
+        if projectType == .object,
+           let targetPosition,
+           targetLocked,
+           let weakestIndex = coverageSectors.enumerated().min(
+                by: { $0.element < $1.element }
+           )?.offset {
+            let row = weakestIndex / 8
+            let column = weakestIndex % 8
+            let desiredAzimuth =
+                -Double.pi + (Double(column) + 0.5) * (2 * Double.pi / 8)
+
+            let cameraOffset = cameraPosition - targetPosition
+            let cameraAzimuth = atan2(
+                Double(cameraOffset.x),
+                Double(cameraOffset.z)
+            )
+
+            let delta = normalizedAngle(desiredAzimuth - cameraAzimuth)
+            let degrees = Int(abs(delta) * 180 / Double.pi)
+
+            missingViewpointRecommendation = MissingViewpointRecommendation(
+                directionKey: directionKey(for: delta),
+                azimuthDegrees: max(degrees, 5),
+                elevationKey: row == 0
+                    ? "viewpoint.lower"
+                    : (row == 2 ? "viewpoint.higher" : "viewpoint.level"),
+                coverage: coverageSectors[weakestIndex]
+            )
+            return
+        }
+
+        guard let missingCell = surfaceCoverageCells
+            .filter({ $0.coverage < 0.66 })
+            .min(by: {
+                simd_distance($0.position, cameraPosition) <
+                simd_distance($1.position, cameraPosition)
+            }) else {
+            missingViewpointRecommendation = nil
+            return
+        }
+
+        let vector = missingCell.position - cameraPosition
+        let desiredYaw = atan2(
+            Double(vector.x),
+            Double(-vector.z)
+        )
+        let delta = normalizedAngle(desiredYaw - Double(cameraYaw))
+        let degrees = Int(abs(delta) * 180 / Double.pi)
+
+        let verticalAngle = atan2(
+            Double(vector.y),
+            max(
+                0.001,
+                sqrt(
+                    Double(vector.x * vector.x + vector.z * vector.z)
+                )
+            )
+        )
+
+        let elevationKey: String
+        if verticalAngle > 0.20 {
+            elevationKey = "viewpoint.higher"
+        } else if verticalAngle < -0.20 {
+            elevationKey = "viewpoint.lower"
+        } else {
+            elevationKey = "viewpoint.level"
+        }
+
+        missingViewpointRecommendation = MissingViewpointRecommendation(
+            directionKey: directionKey(for: delta),
+            azimuthDegrees: max(degrees, 5),
+            elevationKey: elevationKey,
+            coverage: missingCell.coverage
+        )
+    }
+
+    private func directionKey(for delta: Double) -> String {
+        if abs(delta) < 0.18 {
+            return "viewpoint.forward"
+        }
+        return delta > 0
+            ? "viewpoint.right"
+            : "viewpoint.left"
+    }
+
+    private func normalizedAngle(_ angle: Double) -> Double {
+        var value = angle
+        while value > Double.pi { value -= 2 * Double.pi }
+        while value < -Double.pi { value += 2 * Double.pi }
+        return value
     }
 
     private func guidance(
