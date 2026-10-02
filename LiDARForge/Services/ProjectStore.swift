@@ -146,6 +146,27 @@ actor ProjectStore {
         return FileManager.default.fileExists(atPath: url.path)
     }
 
+    func sourceSessionCount(projectID: UUID) throws -> Int {
+        let root = try projectDirectory(for: projectID)
+            .appendingPathComponent("sources", isDirectory: true)
+
+        guard FileManager.default.fileExists(atPath: root.path) else {
+            return 0
+        }
+
+        return try FileManager.default.contentsOfDirectory(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        .filter {
+            (try? $0.resourceValues(
+                forKeys: [.isDirectoryKey]
+            ).isDirectory) == true
+        }
+        .count
+    }
+
     func buildSharePackage(projectID: UUID) throws -> URL {
         let source = try projectDirectory(for: projectID)
         guard FileManager.default.fileExists(atPath: source.path) else {
