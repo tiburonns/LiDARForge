@@ -161,3 +161,4 @@
 "measure.latest" = "Latest distance";
 "measure.count" = "%d measurements";
 "measure.clear" = "Clear";
+"roomplan.plan2d" = "2D floor plan preview";
