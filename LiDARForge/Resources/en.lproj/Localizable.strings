@@ -272,3 +272,10 @@
 "source.stop" = "Stop Archive";
 "source.active" = "Source archive recording";
 "source.saved" = "RGB, depth, confidence, camera pose, intrinsics, timestamps, and IMU are being preserved in this project.";
+
+"projects.persistence" = "Persistence";
+"projects.worldMap" = "Spatial relocalization map";
+"projects.sourceSessions" = "Source capture sessions";
+"projects.coverageCells" = "Saved coverage samples";
+"projects.available" = "Available";
+"projects.unavailable" = "Not yet available";
