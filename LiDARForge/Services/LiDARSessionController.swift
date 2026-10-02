@@ -65,9 +65,19 @@ enum CaptureGuidance: String {
 }
 
 struct SpatialMeasurement: Identifiable, Codable {
-    let id = UUID()
+    let id: UUID
     let distanceMeters: Double
-    let createdAt = Date()
+    let createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        distanceMeters: Double,
+        createdAt: Date = Date()
+    ) {
+        self.id = id
+        self.distanceMeters = distanceMeters
+        self.createdAt = createdAt
+    }
 }
 
 struct DepthStatistics {
@@ -594,7 +604,9 @@ final class LiDARSessionController: ObservableObject {
                 }
                 .prefix(4_500)
             surfaceCoverageStates = Dictionary(
-                uniqueKeysWithValues: retained
+                uniqueKeysWithValues: retained.map {
+                    ($0.key, $0.value)
+                }
             )
         }
 
