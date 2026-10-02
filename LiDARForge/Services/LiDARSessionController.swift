@@ -12,6 +12,8 @@ enum CaptureGuidance: String {
     case moveSlower
     case moveCloser
     case moveFarther
+    case lockTarget
+    case fillCoverage
     case addVisualDetail
     case improveConfidence
     case changeViewpoint
@@ -26,6 +28,8 @@ enum CaptureGuidance: String {
         case .moveSlower: return "coach.moveSlower"
         case .moveCloser: return "coach.moveCloser"
         case .moveFarther: return "coach.moveFarther"
+        case .lockTarget: return "coach.lockTarget"
+        case .fillCoverage: return "coach.fillCoverage"
         case .addVisualDetail: return "coach.addVisualDetail"
         case .improveConfidence: return "coach.improveConfidence"
         case .changeViewpoint: return "coach.changeViewpoint"
@@ -42,6 +46,8 @@ enum CaptureGuidance: String {
         case .moveSlower: return "tortoise"
         case .moveCloser: return "arrow.down.right.and.arrow.up.left"
         case .moveFarther: return "arrow.up.left.and.arrow.down.right"
+        case .lockTarget: return "scope"
+        case .fillCoverage: return "arrow.triangle.2.circlepath"
         case .addVisualDetail: return "sparkles"
         case .improveConfidence: return "scope"
         case .changeViewpoint: return "arrow.triangle.2.circlepath"
@@ -274,7 +280,7 @@ final class LiDARSessionController: ObservableObject {
         let geometryScore = min(Double(meshAnchors) / profile.geometryTarget, 1)
         let timeScore = min(Date().timeIntervalSince(startedAt) / 45.0, 1)
 
-        coverage = min(
+        let baseCoverage = min(
             1,
             orientationScore * 0.35 +
             movementScore * 0.30 +
@@ -282,15 +288,35 @@ final class LiDARSessionController: ObservableObject {
             timeScore * 0.10
         )
 
+        let directionalCoverage = coverageSectors.isEmpty
+            ? 0
+            : coverageSectors.reduce(0, +) / Double(coverageSectors.count)
+
+        if projectType == .object, targetLocked {
+            coverage = min(
+                1,
+                baseCoverage * 0.60 +
+                directionalCoverage * 0.40
+            )
+        } else {
+            coverage = baseCoverage
+        }
+
         thermalDescription = thermalStateDescription(ProcessInfo.processInfo.thermalState)
 
         let confidenceReady = confidence.map { $0 >= 0.45 } ?? true
         let depthReady = !supportsDepth || depthStatistics.validRatio >= 0.20
+        let wellCoveredSectors = coverageSectors.filter { $0 >= 0.66 }.count
+        let targetReady =
+            projectType != .object ||
+            (targetLocked && wellCoveredSectors >= 14)
+
         recommendedReady =
             coverage >= profile.targetCoverage &&
             confidenceReady &&
             depthReady &&
-            trackingIsNormal
+            trackingIsNormal &&
+            targetReady
 
         captureGuidance = guidance(
             trackingIsNormal: trackingIsNormal,
@@ -460,8 +486,19 @@ final class LiDARSessionController: ObservableObject {
             return .improveConfidence
         }
 
+        if projectType == .object, !targetLocked {
+            return .lockTarget
+        }
+
         if featurePointCount < 45 {
             return .addVisualDetail
+        }
+
+        if projectType == .object, targetLocked {
+            let covered = coverageSectors.filter { $0 >= 0.66 }.count
+            if covered < 14 {
+                return .fillCoverage
+            }
         }
 
         if recommendedReady {
