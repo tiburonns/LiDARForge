@@ -78,7 +78,7 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Exportación arquitectónica PDF / SVG / DXF
 - QA en dispositivo físico, rendimiento, accesibilidad y endurecimiento para TestFlight
 
-Consulta [docs/ROADMAP.md](docs/ROADMAP.md) y [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Consulta [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md).
 
 ## Privacidad
 
