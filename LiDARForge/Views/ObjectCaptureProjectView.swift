@@ -64,8 +64,6 @@ final class ObjectCaptureWorkflowModel: ObservableObject {
             configuration.checkpointDirectory = checkpoints
             configuration.isOverCaptureEnabled = false
 
-            session.isAutoCaptureEnabled = true
-            session.shouldPlayHaptics = true
             session.start(
                 imagesDirectory: images,
                 configuration: configuration
@@ -230,7 +228,6 @@ struct ObjectCaptureProjectView: View {
                 ZStack {
                     if showPointCloud {
                         ObjectCapturePointCloudView(session: session)
-                            .showShotLocations(true)
                             .ignoresSafeArea()
                     } else {
                         ObjectCaptureView(session: session)
