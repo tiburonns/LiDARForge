@@ -123,6 +123,14 @@ struct ScannerView: View {
                 controller.restoreMeasurements(saved)
             }
 
+            if let savedCoverage = existingProject?.surfaceCoverage {
+                controller.restoreSurfaceCoverage(savedCoverage)
+            }
+
+            if let savedTarget = existingProject?.target {
+                controller.restoreTarget(savedTarget)
+            }
+
             startSourceArchiveIfNeeded()
         }
         .onChange(of: stage) { _, newStage in
@@ -846,7 +854,8 @@ struct ScannerView: View {
                     coverage: $0.coverage,
                     confidence: $0.confidence
                 )
-            }
+            },
+            target: controller.targetRecord
         )
 
         controller.requestWorldMapSave()
