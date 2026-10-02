@@ -29,20 +29,20 @@
 - [x] 24-sector object coverage map
 - [x] CI build workflow
 
-## 0.2 — Interior
+## 0.2 — Capture Intelligence & Interior
 
 - [x] RoomPlan integration
 - [x] walls / openings / doors / windows summary
-- [ ] room completeness coaching
-- [ ] 2D plan preview
+- [x] room completeness coaching
+- [x] 2D plan preview
 - [x] USDZ room mesh export
 
 ## 0.3 — Object
 
-- [ ] ObjectCaptureSession integration
-- [ ] guided orbit capture
-- [ ] low / normal / high angle pass guidance
-- [ ] ObjectCapture point cloud preview
+- [x] ObjectCaptureSession integration
+- [x] guided orbit capture
+- [x] multi-pass and flip guidance
+- [x] ObjectCapture point cloud preview
 - [ ] local photogrammetry reconstruction when supported
 
 ## 0.4 — Coverage Coach 2
@@ -52,21 +52,21 @@
 - [ ] missing-viewpoint detection
 - [ ] occlusion detection
 - [ ] depth-confidence heatmap projected into the mesh
-- [ ] motion-blur / exposure warnings
+- [x] motion-blur / exposure warnings
 
 ## 0.5 — RGB-D / Raw
 
-- [ ] synchronized RGB + depth recording
-- [ ] camera pose stream
-- [ ] camera intrinsics
+- [x] synchronized RGB + depth recording
+- [x] camera pose stream
+- [x] camera intrinsics
 - [ ] IMU stream
-- [ ] frame timestamps
-- [ ] dataset export
+- [x] frame timestamps
+- [x] dataset export
 
 ## 0.6 — Building
 
-- [ ] multi-room projects
-- [ ] room alignment
+- [x] multi-room projects
+- [x] RoomPlan StructureBuilder alignment
 - [ ] floor hierarchy
 - [ ] exterior + interior project combination
 
@@ -75,11 +75,20 @@
 - [x] PLY point cloud
 - [ ] XYZ
 - [ ] LAS
-- [ ] USDZ
+- [x] USDZ RoomPlan mesh
 - [ ] OBJ
 - [ ] STL
 - [ ] GLB
 - [ ] PDF / SVG / DXF plan exports
+
+## 0.8 — Project Continuity
+
+- [x] project detail screen
+- [x] persistent per-project point cloud artifact
+- [x] shareable .lidarforge project package
+- [x] resume workflow while preserving project identity and measurements
+- [ ] persisted ARWorldMap for later-session relocalization
+- [ ] source RGB / depth / confidence artifacts attached to ordinary scan projects
 
 ## 1.0
 
