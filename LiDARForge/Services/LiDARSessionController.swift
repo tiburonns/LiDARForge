@@ -5,6 +5,46 @@ import CoreVideo
 import Foundation
 import UIKit
 
+enum CaptureGuidance: String {
+    case initializing
+    case good
+    case moveSlower
+    case addVisualDetail
+    case improveConfidence
+    case changeViewpoint
+    case ready
+    case interrupted
+    case coolDevice
+
+    var titleKey: String {
+        switch self {
+        case .initializing: return "coach.initializing"
+        case .good: return "coach.good"
+        case .moveSlower: return "coach.moveSlower"
+        case .addVisualDetail: return "coach.addVisualDetail"
+        case .improveConfidence: return "coach.improveConfidence"
+        case .changeViewpoint: return "coach.changeViewpoint"
+        case .ready: return "coach.ready"
+        case .interrupted: return "coach.interrupted"
+        case .coolDevice: return "coach.coolDevice"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .initializing: return "hourglass"
+        case .good: return "viewfinder"
+        case .moveSlower: return "tortoise"
+        case .addVisualDetail: return "sparkles"
+        case .improveConfidence: return "scope"
+        case .changeViewpoint: return "arrow.triangle.2.circlepath"
+        case .ready: return "checkmark.circle.fill"
+        case .interrupted: return "pause.circle"
+        case .coolDevice: return "thermometer.high"
+        }
+    }
+}
+
 @MainActor
 final class LiDARSessionController: ObservableObject {
     @Published private(set) var coverage: Double = 0
@@ -15,14 +55,32 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var depthResolution: CGSize = .zero
     @Published private(set) var depthPreview: UIImage?
     @Published private(set) var confidencePreview: UIImage?
+    @Published private(set) var captureGuidance: CaptureGuidance = .initializing
+    @Published private(set) var motionSpeed: Double = 0
+    @Published private(set) var isInterrupted = false
+    @Published private(set) var sessionError: String?
+    @Published private(set) var thermalDescription: String = "Nominal"
+    @Published private(set) var recommendedReady = false
+    @Published private(set) var accumulatedPointCount = 0
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
     private var orientationBins = Set<String>()
     private var spatialCells = Set<String>()
+    private var pointKeys = Set<PointKey>()
+    private var pointCloudPoints: [SIMD3<Float>] = []
     private var startedAt = Date()
+    private var lastPosition: SIMD3<Float>?
+    private var lastTimestamp: TimeInterval?
+    private var lastMeaningfulMovement = Date()
 
-    func reset() {
+    private struct PointKey: Hashable {
+        let x: Int
+        let y: Int
+        let z: Int
+    }
+
+    func reset(clearPointCloud: Bool = false) {
         orientationBins.removeAll()
         spatialCells.removeAll()
         coverage = 0
@@ -33,22 +91,49 @@ final class LiDARSessionController: ObservableObject {
         depthResolution = .zero
         depthPreview = nil
         confidencePreview = nil
+        captureGuidance = .initializing
+        motionSpeed = 0
+        isInterrupted = false
+        sessionError = nil
+        recommendedReady = false
         startedAt = Date()
+        lastPosition = nil
+        lastTimestamp = nil
+        lastMeaningfulMovement = Date()
+
+        if clearPointCloud {
+            pointKeys.removeAll(keepingCapacity: true)
+            pointCloudPoints.removeAll(keepingCapacity: true)
+            accumulatedPointCount = 0
+        }
+    }
+
+    func setInterrupted(_ interrupted: Bool) {
+        isInterrupted = interrupted
+        if interrupted {
+            captureGuidance = .interrupted
+        }
+    }
+
+    func setSessionError(_ message: String?) {
+        sessionError = message
     }
 
     func update(
-        featurePoints: Int,
+        featurePoints: [SIMD3<Float>],
         meshAnchors: Int,
         tracking: String,
+        trackingIsNormal: Bool,
         yaw: Float,
         pitch: Float,
         cameraPosition: SIMD3<Float>,
+        timestamp: TimeInterval,
         depthResolution: CGSize,
         confidence: Double?,
         depthPreview: UIImage?,
         confidencePreview: UIImage?
     ) {
-        featurePointCount = featurePoints
+        featurePointCount = featurePoints.count
         meshAnchorCount = meshAnchors
         trackingDescription = tracking
         self.depthResolution = depthResolution
@@ -60,6 +145,9 @@ final class LiDARSessionController: ObservableObject {
         if let confidencePreview {
             self.confidencePreview = confidencePreview
         }
+
+        updateMotion(position: cameraPosition, timestamp: timestamp)
+        accumulate(points: featurePoints)
 
         let yawBin = Int(((Double(yaw) + .pi) / (2 * .pi) * 12).rounded(.down))
         let pitchBand = Int(((Double(pitch) + (.pi / 2)) / .pi * 3).rounded(.down))
@@ -83,6 +171,112 @@ final class LiDARSessionController: ObservableObject {
             geometryScore * 0.25 +
             timeScore * 0.10
         )
+
+        thermalDescription = thermalStateDescription(ProcessInfo.processInfo.thermalState)
+
+        let confidenceReady = confidence.map { $0 >= 0.45 } ?? true
+        recommendedReady = coverage >= 0.72 && confidenceReady && trackingIsNormal
+        captureGuidance = guidance(
+            trackingIsNormal: trackingIsNormal,
+            confidence: confidence,
+            featurePointCount: featurePoints.count
+        )
+    }
+
+    func pointCloudSnapshot() -> [SIMD3<Float>] {
+        pointCloudPoints
+    }
+
+    private func updateMotion(position: SIMD3<Float>, timestamp: TimeInterval) {
+        defer {
+            lastPosition = position
+            lastTimestamp = timestamp
+        }
+
+        guard let previous = lastPosition, let previousTime = lastTimestamp else {
+            motionSpeed = 0
+            return
+        }
+
+        let delta = max(timestamp - previousTime, 0.001)
+        let distance = simd_distance(position, previous)
+        motionSpeed = Double(distance) / delta
+
+        if distance > 0.03 {
+            lastMeaningfulMovement = Date()
+        }
+    }
+
+    private func accumulate(points: [SIMD3<Float>]) {
+        guard !points.isEmpty, pointCloudPoints.count < 50_000 else { return }
+
+        for point in points {
+            let key = PointKey(
+                x: Int((point.x / 0.02).rounded()),
+                y: Int((point.y / 0.02).rounded()),
+                z: Int((point.z / 0.02).rounded())
+            )
+
+            if pointKeys.insert(key).inserted {
+                pointCloudPoints.append(point)
+                if pointCloudPoints.count >= 50_000 { break }
+            }
+        }
+
+        accumulatedPointCount = pointCloudPoints.count
+    }
+
+    private func guidance(
+        trackingIsNormal: Bool,
+        confidence: Double?,
+        featurePointCount: Int
+    ) -> CaptureGuidance {
+        if isInterrupted {
+            return .interrupted
+        }
+
+        switch ProcessInfo.processInfo.thermalState {
+        case .serious, .critical:
+            return .coolDevice
+        default:
+            break
+        }
+
+        if !trackingIsNormal {
+            return trackingDescription == "Move slower" ? .moveSlower : .addVisualDetail
+        }
+
+        if motionSpeed > 1.0 {
+            return .moveSlower
+        }
+
+        if let confidence, confidence < 0.35 {
+            return .improveConfidence
+        }
+
+        if featurePointCount < 45 {
+            return .addVisualDetail
+        }
+
+        if recommendedReady {
+            return .ready
+        }
+
+        if Date().timeIntervalSince(lastMeaningfulMovement) > 4 {
+            return .changeViewpoint
+        }
+
+        return .good
+    }
+
+    private func thermalStateDescription(_ state: ProcessInfo.ThermalState) -> String {
+        switch state {
+        case .nominal: return "Nominal"
+        case .fair: return "Fair"
+        case .serious: return "Serious"
+        case .critical: return "Critical"
+        @unknown default: return "Unknown"
+        }
     }
 
     var snapshot: ScanMetricsSnapshot {
@@ -114,6 +308,11 @@ enum LiDARFrameProcessor {
             @unknown default: return "Limited"
             }
         }
+    }
+
+    static func isTrackingNormal(_ state: ARCamera.TrackingState) -> Bool {
+        if case .normal = state { return true }
+        return false
     }
 
     static func confidenceScore(from pixelBuffer: CVPixelBuffer?) -> Double? {
