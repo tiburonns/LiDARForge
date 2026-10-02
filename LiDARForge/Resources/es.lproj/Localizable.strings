@@ -114,3 +114,10 @@
 "health.recommend.coverage" = "Continúa alrededor del sujeto y completa los sectores rojos o amarillos.";
 "health.recommend.density" = "Haz otra pasada lenta para aumentar el detalle geométrico.";
 "health.recommend.ready" = "La calidad de captura es suficiente para continuar a la siguiente etapa.";
+"quality.title" = "Calidad de captura";
+"quality.fast" = "Rápido";
+"quality.fast.subtitle" = "Menor carga de procesamiento y temperatura para sesiones largas.";
+"quality.balanced" = "Equilibrado";
+"quality.balanced.subtitle" = "Mezcla recomendada de detalle, rendimiento y temperatura.";
+"quality.maximum" = "Máximo";
+"quality.maximum.subtitle" = "Mayor densidad de puntos y vistas más rápidas con mayor carga térmica.";
