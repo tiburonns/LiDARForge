@@ -52,6 +52,12 @@ enum CaptureGuidance: String {
     }
 }
 
+struct SpatialMeasurement: Identifiable {
+    let id = UUID()
+    let distanceMeters: Double
+    let createdAt = Date()
+}
+
 struct DepthStatistics {
     let centerDistance: Double?
     let validRatio: Double
@@ -83,6 +89,8 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var targetDistanceMeters: Double?
     @Published private(set) var targetRadiusMeters: Double = 0.75
     @Published private(set) var coverageSectors = Array(repeating: 0.0, count: 24)
+    @Published private(set) var measurements: [SpatialMeasurement] = []
+    @Published private(set) var measurementDraftPointCount = 0
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
@@ -96,6 +104,7 @@ final class LiDARSessionController: ObservableObject {
     private var densePointCloudPoints: [SIMD3<Float>] = []
     private var targetPosition: SIMD3<Float>?
     private var coverageSectorHits = Array(repeating: 0, count: 24)
+    private var measurementStart: SIMD3<Float>?
     private var startedAt = Date()
     private var lastPosition: SIMD3<Float>?
     private var lastTimestamp: TimeInterval?
@@ -132,10 +141,41 @@ final class LiDARSessionController: ObservableObject {
         targetDistanceMeters = nil
         coverageSectorHits = Array(repeating: 0, count: 24)
         coverageSectors = Array(repeating: 0, count: 24)
+        measurementStart = nil
+        measurementDraftPointCount = 0
     }
 
     func setTargetRadius(_ meters: Double) {
         targetRadiusMeters = min(max(meters, 0.20), 3.00)
+    }
+
+    func addMeasurementPoint(_ position: SIMD3<Float>) {
+        if let start = measurementStart {
+            let distance = Double(simd_distance(start, position))
+            measurements.insert(
+                SpatialMeasurement(distanceMeters: distance),
+                at: 0
+            )
+            if measurements.count > 20 {
+                measurements.removeLast(measurements.count - 20)
+            }
+            measurementStart = nil
+            measurementDraftPointCount = 0
+        } else {
+            measurementStart = position
+            measurementDraftPointCount = 1
+        }
+    }
+
+    func cancelMeasurementDraft() {
+        measurementStart = nil
+        measurementDraftPointCount = 0
+    }
+
+    func clearMeasurements() {
+        measurementStart = nil
+        measurementDraftPointCount = 0
+        measurements.removeAll()
     }
 
     func reset(clearPointCloud: Bool = false) {
@@ -458,7 +498,8 @@ final class LiDARSessionController: ObservableObject {
             centerDistanceMeters: centerDistanceMeters,
             densePointCount: densePointCount,
             thermalDescription: thermalDescription,
-            targetLocked: targetLocked
+            targetLocked: targetLocked,
+            measurementCount: measurements.count
         )
     }
 }
