@@ -25,6 +25,12 @@ struct HomeView: View {
                     } label: {
                         Label("home.newProject", systemImage: "viewfinder")
                     }
+
+                    NavigationLink {
+                        ProjectsView()
+                    } label: {
+                        Label("projects.title", systemImage: "square.stack.3d.up")
+                    }
                 }
 
                 Section("home.tools") {
