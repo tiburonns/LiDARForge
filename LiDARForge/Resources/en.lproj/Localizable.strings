@@ -165,3 +165,11 @@
 "roomplan.completeness" = "Structural completeness";
 "roomplan.completeness.good" = "Structural edges are sufficiently complete for this pass.";
 "roomplan.completeness.more" = "Some structural edges remain incomplete. Consider another pass before continuing.";
+"rgbd.title" = "RGB-D Dataset";
+"rgbd.subtitle" = "Record synchronized RGB, LiDAR depth, confidence, camera pose, intrinsics, and timestamps into a local .lidarforge package.";
+"rgbd.recording" = "Recording RGB-D";
+"rgbd.recording.subtitle" = "Keep movement smooth. Frames are written locally as the scan continues.";
+"rgbd.start" = "Start recording";
+"rgbd.stop" = "Stop";
+"rgbd.finalizing" = "Finalizing dataset…";
+"rgbd.share" = "Share dataset";
