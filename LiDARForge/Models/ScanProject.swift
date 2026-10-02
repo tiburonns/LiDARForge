@@ -63,6 +63,13 @@ struct SurfaceCoverageRecord: Identifiable, Codable {
     let confidence: Double
 }
 
+struct ScanTargetRecord: Codable {
+    let x: Float
+    let y: Float
+    let z: Float
+    let radiusMeters: Double
+}
+
 struct ScanProject: Identifiable, Codable {
     let id: UUID
     let createdAt: Date
@@ -73,4 +80,5 @@ struct ScanProject: Identifiable, Codable {
     var metrics: ScanMetricsSnapshot
     var measurements: [SpatialMeasurement]? = nil
     var surfaceCoverage: [SurfaceCoverageRecord]? = nil
+    var target: ScanTargetRecord? = nil
 }
