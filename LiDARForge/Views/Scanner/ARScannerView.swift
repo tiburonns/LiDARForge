@@ -8,6 +8,7 @@ struct ARScannerView: UIViewRepresentable {
     var viewMode: SensorViewMode
     var isRunning: Bool
     var allowsTargetLock: Bool = false
+    var captureQuality: CaptureQualityMode = .balanced
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -18,6 +19,7 @@ struct ARScannerView: UIViewRepresentable {
         view.automaticallyConfigureSession = false
         context.coordinator.attach(to: view)
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
+        context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
         return view
@@ -25,6 +27,7 @@ struct ARScannerView: UIViewRepresentable {
 
     func updateUIView(_ uiView: ARView, context: Context) {
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
+        context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
     }
@@ -43,6 +46,7 @@ struct ARScannerView: UIViewRepresentable {
         private var lastPreviewTimestamp: TimeInterval = 0
         private var lastPointCloudTimestamp: TimeInterval = 0
         private var allowsTargetLock = false
+        private var captureQuality: CaptureQualityMode = .balanced
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -62,6 +66,10 @@ struct ARScannerView: UIViewRepresentable {
 
         func setAllowsTargetLock(_ allowed: Bool) {
             allowsTargetLock = allowed
+        }
+
+        func setCaptureQuality(_ quality: CaptureQualityMode) {
+            captureQuality = quality
         }
 
         @objc
@@ -203,7 +211,8 @@ struct ARScannerView: UIViewRepresentable {
             var depthPreview: UIImage?
             var confidencePreview: UIImage?
 
-            if frame.timestamp - lastPreviewTimestamp >= 0.20, let depth {
+            if frame.timestamp - lastPreviewTimestamp >= captureQuality.previewInterval,
+               let depth {
                 lastPreviewTimestamp = frame.timestamp
                 depthPreview = LiDARFrameProcessor.depthImage(from: depth.depthMap)
                 confidencePreview = LiDARFrameProcessor.confidenceImage(from: depth.confidenceMap)
@@ -222,14 +231,14 @@ struct ARScannerView: UIViewRepresentable {
 
             var densePoints: [SIMD3<Float>] = []
             if trackingNormal,
-               frame.timestamp - lastPointCloudTimestamp >= 0.50,
+               frame.timestamp - lastPointCloudTimestamp >= captureQuality.denseSampleInterval,
                let depth {
                 lastPointCloudTimestamp = frame.timestamp
                 densePoints = DepthPointCloudBuilder.worldPoints(
                     depthMap: depth.depthMap,
                     confidenceMap: depth.confidenceMap,
                     camera: frame.camera,
-                    sampleStride: 6,
+                    sampleStride: captureQuality.depthSampleStride,
                     minimumConfidence: 1,
                     maximumDepth: 6.0
                 )
