@@ -221,6 +221,75 @@ actor ProjectStore {
         )
     }
 
+    func importPackage(from sourceURL: URL) throws -> ScanProject {
+        let accessed = sourceURL.startAccessingSecurityScopedResource()
+        defer {
+            if accessed {
+                sourceURL.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        let sourceProjectURL = sourceURL.appendingPathComponent(
+            "project.json"
+        )
+
+        guard FileManager.default.fileExists(
+            atPath: sourceProjectURL.path
+        ) else {
+            throw ProjectStoreError.projectUnavailable
+        }
+
+        let data = try Data(contentsOf: sourceProjectURL)
+        let imported = try decoder.decode(
+            ScanProject.self,
+            from: data
+        )
+
+        let existingURL = try projectDirectory(for: imported.id)
+        let destinationID: UUID
+
+        if FileManager.default.fileExists(atPath: existingURL.path) {
+            destinationID = UUID()
+        } else {
+            destinationID = imported.id
+        }
+
+        let destination = try projectDirectory(for: destinationID)
+
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
+        }
+
+        try FileManager.default.copyItem(
+            at: sourceURL,
+            to: destination
+        )
+
+        let normalized = ScanProject(
+            id: destinationID,
+            createdAt: imported.createdAt,
+            updatedAt: Date(),
+            name: imported.name,
+            type: imported.type,
+            stage: imported.stage,
+            metrics: imported.metrics,
+            measurements: imported.measurements,
+            surfaceCoverage: imported.surfaceCoverage,
+            target: imported.target
+        )
+
+        _ = try save(normalized)
+
+        let copiedManifest = destination.appendingPathComponent(
+            "manifest.json"
+        )
+        if FileManager.default.fileExists(atPath: copiedManifest.path) {
+            try? FileManager.default.removeItem(at: copiedManifest)
+        }
+
+        return normalized
+    }
+
     func deleteProject(id: UUID) throws {
         let directory = try projectDirectory(for: id)
         if FileManager.default.fileExists(atPath: directory.path) {
