@@ -229,3 +229,46 @@
 "projects.buildPackage" = "Crear paquete .lidarforge";
 "projects.buildingPackage" = "Creando paquete…";
 "projects.sharePackage" = "Compartir paquete .lidarforge";
+
+"customize.title" = "Personalizar herramientas";
+"customize.open" = "Elegir funciones y herramientas";
+"customize.summary" = "Elige qué aparece durante el escaneo y en Herramientas del sensor, y ordénalo según tu flujo.";
+"customize.captureFunctions" = "Funciones de captura";
+"customize.captureFunctions.footer" = "Estos controles aparecen en la fila rápida del escáner. Los controles esenciales de captura y guardado permanecen disponibles.";
+"customize.sensorTools" = "Herramientas del sensor";
+"customize.sensorTools.footer" = "Las herramientas activadas aparecen en este orden en la pantalla de Herramientas del sensor.";
+"customize.reset" = "Restablecer herramientas";
+"customize.noSensorTools" = "Sin herramientas del sensor";
+"customize.noSensorTools.subtitle" = "Activa herramientas desde el selector de personalización.";
+"customize.measurements" = "Mediciones";
+"customize.measurements.subtitle" = "Mide distancias entre puntos dentro de la escena espacial.";
+"customize.scanHealth" = "Salud del escaneo";
+"customize.scanHealth.subtitle" = "Revisa calidad, profundidad válida, densidad y tracking.";
+"customize.coverageHeatmap" = "Heatmap de cobertura 3D";
+"customize.coverageHeatmap.subtitle" = "Superpone muestras rojas, amarillas y verdes sobre las superficies reconstruidas.";
+"customize.pointCloudExport" = "Exportar nube de puntos";
+"customize.pointCloudExport.subtitle" = "Exporta el mejor PLY disponible desde SceneDepth o puntos AR.";
+"customize.sourceArchive" = "Archivo de fuentes";
+"customize.sourceArchive.subtitle" = "Conserva RGB, profundidad, confianza, pose, intrínsecos, timestamps e IMU para reprocesar después.";
+"customize.nightVision.subtitle" = "Visualización de baja luz basada en profundidad.";
+"customize.depth.subtitle" = "Inspecciona la imagen SceneDepth del LiDAR.";
+"customize.confidence.subtitle" = "Inspecciona la confianza LiDAR por píxel.";
+"customize.points.subtitle" = "Muestra puntos de características usados por AR.";
+"customize.mesh.subtitle" = "Muestra la geometría reconstruida de la escena.";
+"customize.raw.subtitle" = "Inspecciona tracking y overlays crudos del sensor.";
+
+"coverage.surface" = "Cobertura de superficie 3D";
+"coverage.show3d" = "Mostrar heatmap 3D";
+"coverage.hide3d" = "Ocultar heatmap 3D";
+"viewpoint.title" = "Perspectiva faltante";
+"viewpoint.left" = "Muévete aproximadamente %d° a la izquierda alrededor de la zona faltante.";
+"viewpoint.right" = "Muévete aproximadamente %d° a la derecha alrededor de la zona faltante.";
+"viewpoint.forward" = "Acércate a la zona faltante resaltada (~%d°).";
+"viewpoint.higher" = "Eleva la cámara y apunta ligeramente hacia abajo.";
+"viewpoint.lower" = "Baja la cámara y apunta ligeramente hacia arriba.";
+"viewpoint.level" = "Mantén una altura similar y cambia la perspectiva horizontal.";
+
+"source.start" = "Archivo de fuentes";
+"source.stop" = "Detener archivo";
+"source.active" = "Guardando fuentes de captura";
+"source.saved" = "Se conservan RGB, profundidad, confianza, pose de cámara, intrínsecos, timestamps e IMU dentro del proyecto.";
