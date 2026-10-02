@@ -9,6 +9,9 @@ struct LiDARForgeApp: App {
             HomeView()
                 .environmentObject(appState)
                 .environment(\.locale, appState.resolvedLocale)
+                .onOpenURL { url in
+                    appState.importProjectPackage(from: url)
+                }
         }
     }
 }
