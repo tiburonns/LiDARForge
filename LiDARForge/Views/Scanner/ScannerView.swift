@@ -11,7 +11,8 @@ struct ScannerView: View {
     @StateObject private var rgbdRecorder = RGBDRecorder()
     @State private var stage: CaptureStage
     @State private var viewMode: SensorViewMode = .cameraPoints
-    @State private var isRunning = true
+    @State private var isRunning: Bool
+    @State private var initialWorldMapData: Data?
     @State private var statusMessage: String?
     @State private var exportURL: URL?
     @State private var showHealthReport = false
@@ -28,6 +29,7 @@ struct ScannerView: View {
         self.projectType = projectType
         self.existingProject = existingProject
         _stage = State(initialValue: initialStage)
+        _isRunning = State(initialValue: existingProject == nil)
         _projectID = State(initialValue: existingProject?.id ?? UUID())
         _projectCreatedAt = State(
             initialValue: existingProject?.createdAt ?? Date()
@@ -43,7 +45,8 @@ struct ScannerView: View {
                 allowsTargetLock: projectType == .object,
                 measurementMode: measurementMode,
                 captureQuality: appState.captureQuality,
-                rgbdRecorder: projectType == .video ? rgbdRecorder : nil
+                rgbdRecorder: projectType == .video ? rgbdRecorder : nil,
+                initialWorldMapData: initialWorldMapData
             )
             .ignoresSafeArea()
 
@@ -106,6 +109,24 @@ struct ScannerView: View {
         }
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
+        }
+        .onChange(of: controller.worldMapData) { _, data in
+            guard let data else { return }
+
+            Task {
+                _ = try? await ProjectStore.shared.saveWorldMap(
+                    data,
+                    projectID: projectID
+                )
+            }
+        }
+        .task {
+            guard let existingProject else { return }
+
+            initialWorldMapData = try? await ProjectStore.shared.loadWorldMap(
+                projectID: existingProject.id
+            )
+            isRunning = true
         }
         .onDisappear {
             isRunning = false
@@ -645,6 +666,8 @@ struct ScannerView: View {
             metrics: controller.snapshot,
             measurements: controller.measurements
         )
+
+        controller.requestWorldMapSave()
 
         Task {
             do {
