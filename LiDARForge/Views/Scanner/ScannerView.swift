@@ -836,7 +836,17 @@ struct ScannerView: View {
             type: projectType,
             stage: stage,
             metrics: controller.snapshot,
-            measurements: controller.measurements
+            measurements: controller.measurements,
+            surfaceCoverage: controller.surfaceCoverageCells.map {
+                SurfaceCoverageRecord(
+                    id: $0.id,
+                    x: $0.position.x,
+                    y: $0.position.y,
+                    z: $0.position.z,
+                    coverage: $0.coverage,
+                    confidence: $0.confidence
+                )
+            }
         )
 
         controller.requestWorldMapSave()
