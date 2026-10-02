@@ -35,6 +35,7 @@ The first implementation includes a live AR/LiDAR workspace with:
 - Fast / Balanced / Maximum capture quality modes
 - Dense SceneDepth point-cloud accumulation with sparse AR fallback
 - Tracking and mesh statistics
+- Customizable function/tool selector with persistent visibility and ordering
 
 ## Current milestone — 0.2 Capture Intelligence
 
@@ -58,6 +59,9 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - RealityKit ObjectCaptureSession appearance workflow with object detection, guided passes, point-cloud preview, flip/new-pass flow, and capture sharing
 - RGB-D dataset recording into local `.lidarforge` datasets
 - Persistent project point-cloud artifacts and shareable `.lidarforge` project packages
+- Persisted ARWorldMap relocalization, object ROI, measurements, and surface-aware 3D coverage samples
+- Per-project RGB/depth/confidence/pose/intrinsics/timestamp/IMU source archives for later reprocessing
+- Missing-viewpoint coach derived from directional and mesh-surface coverage
 - Project detail screen with workflow progress and continuation
 - Pause/resume and interruption recovery without intentionally discarding the current scan
 - Sensor tools screen
@@ -67,11 +71,8 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 
 ## Planned next milestones
 
-- Mesh-projected surface-aware coverage heatmap
-- Missing-viewpoint and occlusion detection
+- Occlusion-aware refinement of the current surface heatmap
 - Depth-confidence heatmap projected into reconstructed geometry
-- Persisted ARWorldMap / relocalization data for true later-session scan continuation
-- IMU stream inside RGB-D datasets
 - Mesh export and conversion
 - OBJ / STL / GLB / XYZ / LAS export pipeline
 - PDF / SVG / DXF architectural plan export
