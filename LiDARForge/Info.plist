@@ -57,6 +57,8 @@
             <string>Editor</string>
         </dict>
     </array>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
     <key>UILaunchScreen</key>
