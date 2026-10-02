@@ -44,13 +44,34 @@
 "metric.mesh" = "Mesh";
 "metric.points" = "Points";
 "metric.tracking" = "Tracking";
+"metric.speed" = "Speed";
+
+"coach.title" = "Capture Coach";
+"coach.initializing" = "Initializing spatial tracking…";
+"coach.good" = "Good capture. Keep moving around the subject.";
+"coach.moveSlower" = "Move more slowly to preserve tracking and detail.";
+"coach.addVisualDetail" = "Aim at textured edges or detailed surfaces to improve tracking.";
+"coach.improveConfidence" = "Change angle or distance to improve depth confidence.";
+"coach.changeViewpoint" = "Change viewpoint; this area is already well observed.";
+"coach.ready" = "This pass has enough coverage to continue.";
+"coach.interrupted" = "Capture was interrupted. Hold position while tracking recovers.";
+"coach.coolDevice" = "Device temperature is high. Pause briefly for consistent capture quality.";
 
 "scan.pause" = "Pause";
 "scan.resume" = "Resume";
 "scan.nextPass" = "Next pass";
 "scan.save" = "Save";
-"project.saved" = "Project snapshot saved";
+"project.saved" = "Project saved.";
 "common.ok" = "OK";
+
+"projects.title" = "Projects";
+"projects.empty.title" = "No Saved Projects";
+"projects.empty.subtitle" = "Complete a capture pass and it will appear here.";
+
+"export.ply" = "PLY";
+"export.share" = "Share";
+"export.ready" = "Sparse feature-point PLY is ready to share.";
+"export.failed" = "The point cloud could not be exported.";
 
 "settings.title" = "Settings";
 "settings.language" = "Language";
