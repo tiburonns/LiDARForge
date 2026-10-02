@@ -279,3 +279,5 @@
 "projects.coverageCells" = "Saved coverage samples";
 "projects.available" = "Available";
 "projects.unavailable" = "Not yet available";
+
+"health.recommend.surface" = "Some reconstructed surfaces are still weakly observed. Follow the Missing Viewpoint guidance and fill the red or yellow 3D heatmap areas.";
