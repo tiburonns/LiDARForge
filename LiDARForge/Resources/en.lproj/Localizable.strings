@@ -138,3 +138,15 @@
 "roomplan.shareUSDZ" = "Share USDZ";
 "roomplan.continueDetail" = "Continue to Detail";
 "roomplan.rescan" = "Rescan room";
+"building.capture.title" = "Building Structure";
+"building.capture.structure" = "Multi-room RoomPlan capture";
+"building.capture.instructions" = "Scan each connected room without leaving the capture workflow. LiDARForge keeps the AR world active so RoomPlan can merge compatible rooms into one structure.";
+"building.capture.roomCount" = "%d rooms";
+"building.capture.active" = "Room scan active";
+"building.capture.finishRoom" = "Finish room";
+"building.capture.roomSaved" = "Room captured";
+"building.capture.nextRoom" = "Scan next room";
+"building.capture.finishStructure" = "Finish structure";
+"building.capture.complete" = "Building structure complete";
+"building.capture.mergedRooms" = "%d rooms merged";
+"building.capture.shareUSDZ" = "Share structure";
