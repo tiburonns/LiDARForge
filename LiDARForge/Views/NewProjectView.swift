@@ -10,7 +10,7 @@ struct NewProjectView: View {
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(ProjectType.allCases) { type in
                     NavigationLink {
-                        ScannerView(projectType: type)
+                        destination(for: type)
                     } label: {
                         VStack(alignment: .leading, spacing: 12) {
                             Image(systemName: type.symbol)
@@ -34,5 +34,14 @@ struct NewProjectView: View {
             .padding()
         }
         .navigationTitle("home.newProject")
+    }
+
+    @ViewBuilder
+    private func destination(for type: ProjectType) -> some View {
+        if type == .interior {
+            RoomPlanProjectView(projectType: type)
+        } else {
+            ScannerView(projectType: type)
+        }
     }
 }
