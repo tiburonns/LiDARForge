@@ -1,6 +1,21 @@
 import ARKit
 import RoomPlan
+import simd
 import SwiftUI
+
+enum RoomPlanPlanSegmentKind {
+    case wall
+    case door
+    case window
+    case opening
+}
+
+struct RoomPlanPlanSegment: Identifiable {
+    let id = UUID()
+    let start: SIMD2<Float>
+    let end: SIMD2<Float>
+    let kind: RoomPlanPlanSegmentKind
+}
 
 struct RoomPlanSummary {
     let walls: Int
@@ -16,6 +31,7 @@ final class RoomPlanCaptureModel: ObservableObject {
     @Published private(set) var isSupported = RoomCaptureSession.isSupported
     @Published private(set) var isComplete = false
     @Published private(set) var summary: RoomPlanSummary?
+    @Published private(set) var planSegments: [RoomPlanPlanSegment] = []
     @Published private(set) var exportURL: URL?
     @Published var errorMessage: String?
 
@@ -28,6 +44,12 @@ final class RoomPlanCaptureModel: ObservableObject {
             objects: room.objects.count,
             floors: room.floors.count
         )
+
+        planSegments =
+            makeSegments(room.walls, kind: .wall) +
+            makeSegments(room.doors, kind: .door) +
+            makeSegments(room.windows, kind: .window) +
+            makeSegments(room.openings, kind: .opening)
 
         do {
             let root = FileManager.default.temporaryDirectory
@@ -61,8 +83,38 @@ final class RoomPlanCaptureModel: ObservableObject {
     func reset() {
         isComplete = false
         summary = nil
+        planSegments = []
         exportURL = nil
         errorMessage = nil
+    }
+
+    private func makeSegments(
+        _ surfaces: [CapturedRoom.Surface],
+        kind: RoomPlanPlanSegmentKind
+    ) -> [RoomPlanPlanSegment] {
+        surfaces.compactMap { surface in
+            let transform = surface.transform
+            let center = SIMD2<Float>(
+                transform.columns.3.x,
+                transform.columns.3.z
+            )
+
+            let axis = SIMD2<Float>(
+                transform.columns.0.x,
+                transform.columns.0.z
+            )
+            let axisLength = simd_length(axis)
+            guard axisLength > 0.0001 else { return nil }
+
+            let direction = axis / axisLength
+            let halfWidth = max(surface.dimensions.x, 0.05) / 2
+
+            return RoomPlanPlanSegment(
+                start: center - direction * halfWidth,
+                end: center + direction * halfWidth,
+                kind: kind
+            )
+        }
     }
 }
 
@@ -164,6 +216,15 @@ struct RoomPlanProjectView: View {
             Label("roomplan.complete", systemImage: "checkmark.seal.fill")
                 .font(.headline)
 
+            if !model.planSegments.isEmpty {
+                RoomPlanFloorPlanView(segments: model.planSegments)
+                    .frame(height: 165)
+                    .background(
+                        .thinMaterial,
+                        in: RoundedRectangle(cornerRadius: 12)
+                    )
+            }
+
             if let summary = model.summary {
                 Grid(horizontalSpacing: 16, verticalSpacing: 8) {
                     GridRow {
@@ -226,6 +287,88 @@ struct RoomPlanProjectView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private struct RoomPlanFloorPlanView: View {
+    let segments: [RoomPlanPlanSegment]
+
+    var body: some View {
+        Canvas { context, size in
+            guard !segments.isEmpty else { return }
+
+            let points = segments.flatMap { [$0.start, $0.end] }
+            guard let minX = points.map(\.x).min(),
+                  let maxX = points.map(\.x).max(),
+                  let minZ = points.map(\.y).min(),
+                  let maxZ = points.map(\.y).max() else {
+                return
+            }
+
+            let inset: CGFloat = 14
+            let spanX = max(CGFloat(maxX - minX), 0.1)
+            let spanZ = max(CGFloat(maxZ - minZ), 0.1)
+            let availableWidth = max(size.width - inset * 2, 1)
+            let availableHeight = max(size.height - inset * 2, 1)
+            let scale = min(
+                availableWidth / spanX,
+                availableHeight / spanZ
+            )
+
+            func point(_ value: SIMD2<Float>) -> CGPoint {
+                CGPoint(
+                    x: inset + CGFloat(value.x - minX) * scale,
+                    y: size.height - inset - CGFloat(value.y - minZ) * scale
+                )
+            }
+
+            for segment in segments {
+                var path = Path()
+                path.move(to: point(segment.start))
+                path.addLine(to: point(segment.end))
+
+                let style: (Color, CGFloat)
+                switch segment.kind {
+                case .wall:
+                    style = (.primary, 4)
+                case .door:
+                    style = (.blue, 3)
+                case .window:
+                    style = (.cyan, 3)
+                case .opening:
+                    style = (.orange, 3)
+                }
+
+                context.stroke(
+                    path,
+                    with: .color(style.0),
+                    lineWidth: style.1
+                )
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            HStack(spacing: 8) {
+                planLegend(.primary, "roomplan.walls")
+                planLegend(.blue, "roomplan.doors")
+                planLegend(.cyan, "roomplan.windows")
+                planLegend(.orange, "roomplan.openings")
+            }
+            .padding(8)
+        }
+        .accessibilityLabel(Text("roomplan.plan2d"))
+    }
+
+    private func planLegend(
+        _ color: Color,
+        _ key: LocalizedStringKey
+    ) -> some View {
+        HStack(spacing: 3) {
+            Capsule()
+                .fill(color)
+                .frame(width: 10, height: 3)
+            Text(key)
+                .font(.caption2)
+        }
     }
 }
 
