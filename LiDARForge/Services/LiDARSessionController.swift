@@ -10,6 +10,8 @@ enum CaptureGuidance: String {
     case initializing
     case good
     case moveSlower
+    case moveCloser
+    case moveFarther
     case addVisualDetail
     case improveConfidence
     case changeViewpoint
@@ -22,6 +24,8 @@ enum CaptureGuidance: String {
         case .initializing: return "coach.initializing"
         case .good: return "coach.good"
         case .moveSlower: return "coach.moveSlower"
+        case .moveCloser: return "coach.moveCloser"
+        case .moveFarther: return "coach.moveFarther"
         case .addVisualDetail: return "coach.addVisualDetail"
         case .improveConfidence: return "coach.improveConfidence"
         case .changeViewpoint: return "coach.changeViewpoint"
@@ -36,6 +40,8 @@ enum CaptureGuidance: String {
         case .initializing: return "hourglass"
         case .good: return "viewfinder"
         case .moveSlower: return "tortoise"
+        case .moveCloser: return "arrow.down.right.and.arrow.up.left"
+        case .moveFarther: return "arrow.up.left.and.arrow.down.right"
         case .addVisualDetail: return "sparkles"
         case .improveConfidence: return "scope"
         case .changeViewpoint: return "arrow.triangle.2.circlepath"
@@ -46,10 +52,19 @@ enum CaptureGuidance: String {
     }
 }
 
+struct DepthStatistics {
+    let centerDistance: Double?
+    let validRatio: Double
+
+    static let unavailable = DepthStatistics(centerDistance: nil, validRatio: 0)
+}
+
 @MainActor
 final class LiDARSessionController: ObservableObject {
     @Published private(set) var coverage: Double = 0
     @Published private(set) var confidence: Double?
+    @Published private(set) var centerDistanceMeters: Double?
+    @Published private(set) var depthValidRatio: Double = 0
     @Published private(set) var featurePointCount: Int = 0
     @Published private(set) var meshAnchorCount: Int = 0
     @Published private(set) var trackingDescription: String = "—"
@@ -66,6 +81,7 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
+    private var profile = CaptureProfile.sensor
     private var orientationBins = Set<String>()
     private var spatialCells = Set<String>()
     private var pointKeys = Set<PointKey>()
@@ -81,11 +97,17 @@ final class LiDARSessionController: ObservableObject {
         let z: Int
     }
 
+    func configure(for projectType: ProjectType) {
+        profile = projectType.captureProfile
+    }
+
     func reset(clearPointCloud: Bool = false) {
         orientationBins.removeAll()
         spatialCells.removeAll()
         coverage = 0
         confidence = nil
+        centerDistanceMeters = nil
+        depthValidRatio = 0
         featurePointCount = 0
         meshAnchorCount = 0
         trackingDescription = "—"
@@ -131,6 +153,7 @@ final class LiDARSessionController: ObservableObject {
         timestamp: TimeInterval,
         depthResolution: CGSize,
         confidence: Double?,
+        depthStatistics: DepthStatistics,
         depthPreview: UIImage?,
         confidencePreview: UIImage?
     ) {
@@ -139,6 +162,8 @@ final class LiDARSessionController: ObservableObject {
         trackingDescription = tracking
         self.depthResolution = depthResolution
         self.confidence = confidence
+        centerDistanceMeters = depthStatistics.centerDistance
+        depthValidRatio = depthStatistics.validRatio
 
         if let depthPreview {
             self.depthPreview = depthPreview
@@ -154,15 +179,14 @@ final class LiDARSessionController: ObservableObject {
         let pitchBand = Int(((Double(pitch) + (.pi / 2)) / .pi * 3).rounded(.down))
         orientationBins.insert("\(max(0, min(11, yawBin))):\(max(0, min(2, pitchBand)))")
 
-        let cellSize: Float = 0.5
-        let x = Int(floor(cameraPosition.x / cellSize))
-        let y = Int(floor(cameraPosition.y / cellSize))
-        let z = Int(floor(cameraPosition.z / cellSize))
+        let x = Int(floor(cameraPosition.x / profile.cellSize))
+        let y = Int(floor(cameraPosition.y / profile.cellSize))
+        let z = Int(floor(cameraPosition.z / profile.cellSize))
         spatialCells.insert("\(x):\(y):\(z)")
 
-        let orientationScore = min(Double(orientationBins.count) / 18.0, 1)
-        let movementScore = min(Double(spatialCells.count) / 14.0, 1)
-        let geometryScore = min(Double(meshAnchors) / 24.0, 1)
+        let orientationScore = min(Double(orientationBins.count) / profile.orientationTarget, 1)
+        let movementScore = min(Double(spatialCells.count) / profile.movementTarget, 1)
+        let geometryScore = min(Double(meshAnchors) / profile.geometryTarget, 1)
         let timeScore = min(Date().timeIntervalSince(startedAt) / 45.0, 1)
 
         coverage = min(
@@ -176,10 +200,18 @@ final class LiDARSessionController: ObservableObject {
         thermalDescription = thermalStateDescription(ProcessInfo.processInfo.thermalState)
 
         let confidenceReady = confidence.map { $0 >= 0.45 } ?? true
-        recommendedReady = coverage >= 0.72 && confidenceReady && trackingIsNormal
+        let depthReady = !supportsDepth || depthStatistics.validRatio >= 0.20
+        recommendedReady =
+            coverage >= profile.targetCoverage &&
+            confidenceReady &&
+            depthReady &&
+            trackingIsNormal
+
         captureGuidance = guidance(
             trackingIsNormal: trackingIsNormal,
             confidence: confidence,
+            centerDistance: depthStatistics.centerDistance,
+            depthValidRatio: depthStatistics.validRatio,
             featurePointCount: featurePoints.count
         )
     }
@@ -230,6 +262,8 @@ final class LiDARSessionController: ObservableObject {
     private func guidance(
         trackingIsNormal: Bool,
         confidence: Double?,
+        centerDistance: Double?,
+        depthValidRatio: Double,
         featurePointCount: Int
     ) -> CaptureGuidance {
         if isInterrupted {
@@ -247,8 +281,21 @@ final class LiDARSessionController: ObservableObject {
             return trackingDescription == "Move slower" ? .moveSlower : .addVisualDetail
         }
 
-        if motionSpeed > 1.0 {
+        if motionSpeed > profile.maxSpeed {
             return .moveSlower
+        }
+
+        if let centerDistance {
+            if centerDistance < profile.minDistance {
+                return .moveFarther
+            }
+            if centerDistance > profile.maxDistance {
+                return .moveCloser
+            }
+        }
+
+        if supportsDepth && depthValidRatio < 0.20 {
+            return .improveConfidence
         }
 
         if let confidence, confidence < 0.35 {
@@ -314,6 +361,65 @@ enum LiDARFrameProcessor {
     static func isTrackingNormal(_ state: ARCamera.TrackingState) -> Bool {
         if case .normal = state { return true }
         return false
+    }
+
+    static func depthStatistics(from pixelBuffer: CVPixelBuffer?) -> DepthStatistics {
+        guard let pixelBuffer else { return .unavailable }
+
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        guard let base = CVPixelBufferGetBaseAddress(pixelBuffer) else {
+            return .unavailable
+        }
+
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let rowStride = bytesPerRow / MemoryLayout<Float32>.size
+        let pointer = base.assumingMemoryBound(to: Float32.self)
+        let step = max(1, min(width, height) / 48)
+
+        let centerMinX = Int(Double(width) * 0.35)
+        let centerMaxX = Int(Double(width) * 0.65)
+        let centerMinY = Int(Double(height) * 0.35)
+        let centerMaxY = Int(Double(height) * 0.65)
+
+        var totalSamples = 0
+        var validSamples = 0
+        var centerSamples: [Float32] = []
+
+        for y in stride(from: 0, to: height, by: step) {
+            for x in stride(from: 0, to: width, by: step) {
+                totalSamples += 1
+                let value = pointer[y * rowStride + x]
+
+                guard value.isFinite, value > 0 else { continue }
+                validSamples += 1
+
+                if x >= centerMinX, x <= centerMaxX,
+                   y >= centerMinY, y <= centerMaxY {
+                    centerSamples.append(value)
+                }
+            }
+        }
+
+        centerSamples.sort()
+        let centerDistance: Double?
+        if centerSamples.isEmpty {
+            centerDistance = nil
+        } else {
+            centerDistance = Double(centerSamples[centerSamples.count / 2])
+        }
+
+        let validRatio = totalSamples > 0
+            ? Double(validSamples) / Double(totalSamples)
+            : 0
+
+        return DepthStatistics(
+            centerDistance: centerDistance,
+            validRatio: validRatio
+        )
     }
 
     static func confidenceScore(from pixelBuffer: CVPixelBuffer?) -> Double? {
