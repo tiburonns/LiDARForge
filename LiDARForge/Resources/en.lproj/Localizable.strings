@@ -229,3 +229,46 @@
 "projects.buildPackage" = "Build .lidarforge Package";
 "projects.buildingPackage" = "Building package…";
 "projects.sharePackage" = "Share .lidarforge Package";
+
+"customize.title" = "Customize Tools";
+"customize.open" = "Choose Functions & Tools";
+"customize.summary" = "Choose what appears while scanning and in Sensor Tools, then reorder it to match your workflow.";
+"customize.captureFunctions" = "Capture Functions";
+"customize.captureFunctions.footer" = "These controls appear in the scanner quick-tools row. Core capture and save controls remain available.";
+"customize.sensorTools" = "Sensor Tools";
+"customize.sensorTools.footer" = "Enabled tools appear in this order on the Sensor Tools screen.";
+"customize.reset" = "Reset Tool Layout";
+"customize.noSensorTools" = "No Sensor Tools Enabled";
+"customize.noSensorTools.subtitle" = "Enable tools from the customization control.";
+"customize.measurements" = "Measurements";
+"customize.measurements.subtitle" = "Measure point-to-point distances inside the spatial scene.";
+"customize.scanHealth" = "Scan Health";
+"customize.scanHealth.subtitle" = "Review capture quality, depth validity, density, and tracking.";
+"customize.coverageHeatmap" = "3D Coverage Heatmap";
+"customize.coverageHeatmap.subtitle" = "Overlay red, yellow, and green coverage samples on reconstructed surfaces.";
+"customize.pointCloudExport" = "Point Cloud Export";
+"customize.pointCloudExport.subtitle" = "Export the best available SceneDepth or AR feature-point PLY.";
+"customize.sourceArchive" = "Source Archive";
+"customize.sourceArchive.subtitle" = "Persist RGB, depth, confidence, pose, intrinsics, timestamps, and IMU for later reprocessing.";
+"customize.nightVision.subtitle" = "Depth-based low-light visualization.";
+"customize.depth.subtitle" = "Inspect the LiDAR SceneDepth image.";
+"customize.confidence.subtitle" = "Inspect per-pixel LiDAR confidence.";
+"customize.points.subtitle" = "Show AR tracking feature points.";
+"customize.mesh.subtitle" = "Show reconstructed scene geometry.";
+"customize.raw.subtitle" = "Inspect raw tracking and sensor overlays.";
+
+"coverage.surface" = "3D surface coverage";
+"coverage.show3d" = "Show 3D Heatmap";
+"coverage.hide3d" = "Hide 3D Heatmap";
+"viewpoint.title" = "Missing Viewpoint";
+"viewpoint.left" = "Move about %d° left around the missing area.";
+"viewpoint.right" = "Move about %d° right around the missing area.";
+"viewpoint.forward" = "Move toward the highlighted missing area (~%d°).";
+"viewpoint.higher" = "Raise the camera and aim slightly downward.";
+"viewpoint.lower" = "Lower the camera and aim slightly upward.";
+"viewpoint.level" = "Keep roughly the same height and change the horizontal viewpoint.";
+
+"source.start" = "Source Archive";
+"source.stop" = "Stop Archive";
+"source.active" = "Source archive recording";
+"source.saved" = "RGB, depth, confidence, camera pose, intrinsics, timestamps, and IMU are being preserved in this project.";
