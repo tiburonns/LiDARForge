@@ -126,6 +126,8 @@ private struct ProjectDetailView: View {
     @State private var packageURL: URL?
     @State private var isBuildingPackage = false
     @State private var errorMessage: String?
+    @State private var hasWorldMap = false
+    @State private var sourceSessionCount = 0
 
     var body: some View {
         List {
@@ -180,6 +182,40 @@ private struct ProjectDetailView: View {
                     "metric.tracking",
                     project.metrics.trackingDescription
                 )
+            }
+
+            Section("projects.persistence") {
+                LabeledContent("projects.worldMap") {
+                    Label(
+                        hasWorldMap
+                            ? "projects.available"
+                            : "projects.unavailable",
+                        systemImage: hasWorldMap
+                            ? "checkmark.circle.fill"
+                            : "circle"
+                    )
+                }
+
+                LabeledContent("projects.sourceSessions") {
+                    Text("\(sourceSessionCount)")
+                        .monospacedDigit()
+                }
+
+                if let score = project.metrics.surfaceCoverageScore {
+                    metricRow(
+                        "coverage.surface",
+                        score.formatted(
+                            .percent.precision(.fractionLength(0))
+                        )
+                    )
+                }
+
+                if let count = project.metrics.surfaceCellCount {
+                    metricRow(
+                        "projects.coverageCells",
+                        count.formatted()
+                    )
+                }
             }
 
             if let measurements = project.measurements,
@@ -263,6 +299,12 @@ private struct ProjectDetailView: View {
             pointCloudURL = try? await ProjectStore.shared.pointCloudURL(
                 projectID: project.id
             )
+            hasWorldMap = (try? await ProjectStore.shared.hasWorldMap(
+                projectID: project.id
+            )) ?? false
+            sourceSessionCount = (try? await ProjectStore.shared.sourceSessionCount(
+                projectID: project.id
+            )) ?? 0
         }
         .alert(
             "LiDARForge",
