@@ -7,7 +7,7 @@ struct ScannerView: View {
     @EnvironmentObject private var appState: AppState
 
     @StateObject private var controller = LiDARSessionController()
-    @State private var stage: CaptureStage = .structure
+    @State private var stage: CaptureStage
     @State private var viewMode: SensorViewMode = .cameraPoints
     @State private var isRunning = true
     @State private var statusMessage: String?
@@ -16,6 +16,14 @@ struct ScannerView: View {
 
     @State private var projectID = UUID()
     @State private var projectCreatedAt = Date()
+
+    init(
+        projectType: ProjectType,
+        initialStage: CaptureStage = .structure
+    ) {
+        self.projectType = projectType
+        _stage = State(initialValue: initialStage)
+    }
 
     var body: some View {
         ZStack {
