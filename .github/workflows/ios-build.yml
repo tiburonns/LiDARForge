@@ -25,3 +25,13 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             build
+
+      - name: Static Analyze
+        run: |
+          xcodebuild \
+            -project LiDARForge.xcodeproj \
+            -scheme LiDARForge \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            analyze
