@@ -21,7 +21,7 @@
 		A1000000000000000000000C /* ARScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000C /* ARScannerView.swift */; };
 		A1000000000000000000000D /* ScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000D /* ScannerView.swift */; };
 		A1000000000000000000000E /* SensorToolView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1000000000000000000000E /* SensorToolView.swift */; };
-		A1000000000000000000000F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000001 /* Localizable.strings */; };
+		A1000000000000000000000F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000001 /* Localizable.strings */; };\n		A10000000000000000000010 /* PointCloudExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* PointCloudExporter.swift */; };\n		A10000000000000000000011 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* ProjectsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,7 +42,7 @@
 		B1000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = LiDARForge/Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000010 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = LiDARForge/Resources/en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		B10000000000000000000011 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = LiDARForge/Resources/es.lproj/Localizable.strings; sourceTree = "<group>"; };
-		B10000000000000000000012 /* LiDARForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiDARForge.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B10000000000000000000012 /* LiDARForge.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiDARForge.app; sourceTree = BUILT_PRODUCTS_DIR; };\n		B10000000000000000000013 /* PointCloudExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Services/PointCloudExporter.swift; sourceTree = "<group>"; };\n		B10000000000000000000014 /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Views/ProjectsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,8 +65,8 @@
 				B10000000000000000000004 /* SensorViewMode.swift */,
 				B10000000000000000000005 /* ScanProject.swift */,
 				B10000000000000000000006 /* ProjectStore.swift */,
-				B10000000000000000000007 /* LiDARSessionController.swift */,
-				B10000000000000000000008 /* HomeView.swift */,
+				B10000000000000000000007 /* LiDARSessionController.swift */,\n				B10000000000000000000013 /* PointCloudExporter.swift */,
+				B10000000000000000000008 /* HomeView.swift */,\n				B10000000000000000000014 /* ProjectsView.swift */,
 				B10000000000000000000009 /* NewProjectView.swift */,
 				B1000000000000000000000A /* SettingsView.swift */,
 				B1000000000000000000000B /* ToolsView.swift */,
@@ -163,8 +163,8 @@
 				A10000000000000000000004 /* SensorViewMode.swift in Sources */,
 				A10000000000000000000005 /* ScanProject.swift in Sources */,
 				A10000000000000000000006 /* ProjectStore.swift in Sources */,
-				A10000000000000000000007 /* LiDARSessionController.swift in Sources */,
-				A10000000000000000000008 /* HomeView.swift in Sources */,
+				A10000000000000000000007 /* LiDARSessionController.swift in Sources */,\n				A10000000000000000000010 /* PointCloudExporter.swift in Sources */,
+				A10000000000000000000008 /* HomeView.swift in Sources */,\n				A10000000000000000000011 /* ProjectsView.swift in Sources */,
 				A10000000000000000000009 /* NewProjectView.swift in Sources */,
 				A1000000000000000000000A /* SettingsView.swift in Sources */,
 				A1000000000000000000000B /* ToolsView.swift in Sources */,
