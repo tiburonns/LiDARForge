@@ -1,29 +1,129 @@
 import SwiftUI
 
 struct ToolsView: View {
-    private let tools: [(String, String, SensorViewMode, Bool)] = [
-        ("tool.nightVision", "moon.stars", .depth, true),
-        ("tool.depth", "square.3.layers.3d", .depth, false),
-        ("tool.confidence", "checkmark.shield", .confidence, false),
-        ("tool.points", "dot.scope", .cameraPoints, false),
-        ("tool.mesh", "triangle", .mesh, false),
-        ("tool.raw", "waveform.path.ecg.rectangle", .raw, false)
-    ]
+    @EnvironmentObject private var appState: AppState
 
     var body: some View {
         List {
-            ForEach(Array(tools.enumerated()), id: \.offset) { _, tool in
-                NavigationLink {
-                    SensorToolView(
-                        titleKey: tool.0,
-                        initialMode: tool.2,
-                        nightVision: tool.3
-                    )
-                } label: {
-                    Label(LocalizedStringKey(tool.0), systemImage: tool.1)
+            let enabled = appState.sensorTools.filter(appState.isEnabled)
+
+            if enabled.isEmpty {
+                ContentUnavailableView(
+                    "customize.noSensorTools",
+                    systemImage: "slider.horizontal.3",
+                    description: Text("customize.noSensorTools.subtitle")
+                )
+            } else {
+                ForEach(enabled) { tool in
+                    NavigationLink {
+                        destination(for: tool)
+                    } label: {
+                        Label(
+                            LocalizedStringKey(tool.titleKey),
+                            systemImage: tool.symbol
+                        )
+                    }
                 }
             }
         }
         .navigationTitle("home.sensorTools")
+        .toolbar {
+            NavigationLink {
+                ToolCustomizationProxyView()
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for tool: WorkspaceTool) -> some View {
+        switch tool {
+        case .nightVision:
+            SensorToolView(
+                titleKey: tool.titleKey,
+                initialMode: .depth,
+                nightVision: true
+            )
+
+        case .depthView:
+            SensorToolView(
+                titleKey: tool.titleKey,
+                initialMode: .depth,
+                nightVision: false
+            )
+
+        case .confidenceView:
+            SensorToolView(
+                titleKey: tool.titleKey,
+                initialMode: .confidence,
+                nightVision: false
+            )
+
+        case .featurePoints:
+            SensorToolView(
+                titleKey: tool.titleKey,
+                initialMode: .cameraPoints,
+                nightVision: false
+            )
+
+        case .meshView:
+            SensorToolView(
+                titleKey: tool.titleKey,
+                initialMode: .mesh,
+                nightVision: false
+            )
+
+        case .rawInspector:
+            SensorToolView(
+                titleKey: tool.titleKey,
+                initialMode: .raw,
+                nightVision: false
+            )
+
+        default:
+            EmptyView()
+        }
+    }
+}
+
+private struct ToolCustomizationProxyView: View {
+    var body: some View {
+        SettingsToolCustomizationLinkView()
+    }
+}
+
+private struct SettingsToolCustomizationLinkView: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        List {
+            Section("customize.sensorTools") {
+                ForEach(appState.sensorTools) { tool in
+                    Toggle(
+                        isOn: Binding(
+                            get: { appState.isEnabled(tool) },
+                            set: { appState.setEnabled($0, for: tool) }
+                        )
+                    ) {
+                        Label(
+                            LocalizedStringKey(tool.titleKey),
+                            systemImage: tool.symbol
+                        )
+                    }
+                }
+                .onMove { source, destination in
+                    appState.moveTools(
+                        in: \WorkspaceTool.isSensorTool,
+                        from: source,
+                        to: destination
+                    )
+                }
+            }
+        }
+        .navigationTitle("customize.sensorTools")
+        .toolbar {
+            EditButton()
+        }
     }
 }
