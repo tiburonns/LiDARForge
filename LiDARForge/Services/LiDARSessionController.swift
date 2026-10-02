@@ -197,6 +197,11 @@ final class LiDARSessionController: ObservableObject {
         measurements.removeAll()
     }
 
+    func restoreMeasurements(_ saved: [SpatialMeasurement]) {
+        guard measurements.isEmpty else { return }
+        measurements = Array(saved.prefix(20))
+    }
+
     func reset(clearPointCloud: Bool = false) {
         orientationBins.removeAll()
         spatialCells.removeAll()
