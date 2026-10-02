@@ -162,3 +162,6 @@
 "measure.count" = "%d mediciones";
 "measure.clear" = "Borrar";
 "roomplan.plan2d" = "Vista previa del plano 2D";
+"roomplan.completeness" = "Completitud estructural";
+"roomplan.completeness.good" = "Los bordes estructurales tienen cobertura suficiente para esta pasada.";
+"roomplan.completeness.more" = "Algunos bordes estructurales siguen incompletos. Considera otra pasada antes de continuar.";
