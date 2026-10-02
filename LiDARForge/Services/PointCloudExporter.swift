@@ -138,6 +138,23 @@ enum PointCloudExporter {
             "\(projectID.uuidString)-\(suffix).ply"
         )
 
+        try writePLY(snapshot: snapshot, to: url)
+        return url
+    }
+
+    static func writePLY(
+        snapshot: PointCloudSnapshot,
+        to url: URL
+    ) throws {
+        guard !snapshot.points.isEmpty else {
+            throw PointCloudExportError.noPoints
+        }
+
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
         let sourceComment: String
         switch snapshot.source {
         case .sceneDepth:
@@ -165,6 +182,5 @@ enum PointCloudExporter {
         }
 
         try output.write(to: url, atomically: true, encoding: .utf8)
-        return url
     }
 }
