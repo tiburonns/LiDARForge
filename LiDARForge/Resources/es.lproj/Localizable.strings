@@ -138,3 +138,15 @@
 "roomplan.shareUSDZ" = "Compartir USDZ";
 "roomplan.continueDetail" = "Continuar a Detalle";
 "roomplan.rescan" = "Reescanear habitación";
+"building.capture.title" = "Estructura del edificio";
+"building.capture.structure" = "Captura RoomPlan de varias habitaciones";
+"building.capture.instructions" = "Escanea cada habitación conectada sin salir del flujo. LiDARForge mantiene activo el mundo AR para que RoomPlan pueda combinar habitaciones compatibles en una sola estructura.";
+"building.capture.roomCount" = "%d habitaciones";
+"building.capture.active" = "Escaneo de habitación activo";
+"building.capture.finishRoom" = "Terminar habitación";
+"building.capture.roomSaved" = "Habitación capturada";
+"building.capture.nextRoom" = "Escanear siguiente";
+"building.capture.finishStructure" = "Terminar estructura";
+"building.capture.complete" = "Estructura del edificio completada";
+"building.capture.mergedRooms" = "%d habitaciones combinadas";
+"building.capture.shareUSDZ" = "Compartir estructura";
