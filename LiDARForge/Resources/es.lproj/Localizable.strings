@@ -272,3 +272,10 @@
 "source.stop" = "Detener archivo";
 "source.active" = "Guardando fuentes de captura";
 "source.saved" = "Se conservan RGB, profundidad, confianza, pose de cámara, intrínsecos, timestamps e IMU dentro del proyecto.";
+
+"projects.persistence" = "Persistencia";
+"projects.worldMap" = "Mapa de relocalización espacial";
+"projects.sourceSessions" = "Sesiones de fuentes guardadas";
+"projects.coverageCells" = "Muestras de cobertura guardadas";
+"projects.available" = "Disponible";
+"projects.unavailable" = "Aún no disponible";
