@@ -227,7 +227,10 @@ struct ScannerView: View {
                     Label("export.ply", systemImage: "point.3.connected.trianglepath.dotted")
                 }
                 .buttonStyle(.bordered)
-                .disabled(controller.accumulatedPointCount == 0)
+                .disabled(
+                    controller.densePointCount == 0 &&
+                    controller.accumulatedPointCount == 0
+                )
 
                 if let exportURL {
                     ShareLink(item: exportURL) {
@@ -267,14 +270,17 @@ struct ScannerView: View {
     }
 
     private func exportPointCloud() {
-        let points = controller.pointCloudSnapshot()
+        let snapshot = controller.bestPointCloudSnapshot()
 
         do {
             exportURL = try PointCloudExporter.exportPLY(
-                points: points,
+                snapshot: snapshot,
                 projectID: projectID
             )
-            statusMessage = String(localized: "export.ready")
+
+            statusMessage = snapshot.source == .sceneDepth
+                ? String(localized: "export.readyDense")
+                : String(localized: "export.readySparse")
         } catch {
             statusMessage = String(localized: "export.failed")
         }
