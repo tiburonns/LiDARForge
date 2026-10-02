@@ -19,7 +19,10 @@ SwiftUI views:
 - Guided scanner
 - Sensor tools
 - Settings
-- RoomPlan interior structure capture
+- RoomPlan interior and multi-room building capture
+- Object Capture appearance workflow
+- RGB-D recorder
+- Project detail / continuation
 - Scan Health report
 
 ### Capture engine
@@ -70,18 +73,20 @@ Fast, Balanced, and Maximum modes adjust SceneDepth sampling stride, dense-cloud
 
 Independent modules:
 
-- RoomPlan (single-room Structure pass implemented)
-- Object Capture (planned)
-- point cloud
-- mesh
-- RGB-D
-- building / multi-room alignment
+- **RoomPlan** — single-room Structure capture, structural summary, 2D plan preview, and USDZ mesh export.
+- **Building RoomPlan** — repeated room capture sharing one AR session, then StructureBuilder merge.
+- **Object Capture** — object detection and guided Appearance capture with multi-pass / flip workflow and point-cloud review.
+- **Point cloud** — SceneDepth back-projection plus AR feature-point fallback.
+- **RGB-D** — synchronized RGB JPEG, Float32 depth, confidence, camera transform, intrinsics, and timestamps.
+- **Mesh** — ARKit scene reconstruction is live; generalized mesh export/conversion remains planned.
 
 ### Project storage
 
-0.1 saves JSON project snapshots under the app Documents directory.
+Projects are stored under the app Documents directory. Each project keeps `project.json` and can persist its preferred point-cloud artifact. The Projects UI can reopen the workflow while preserving project identity and measurements.
 
-The planned package is:
+A shareable `.lidarforge` directory package is built from the current project files plus a manifest. RGB-D recording also uses a `.lidarforge` dataset directory with synchronized source data.
+
+Current / target package layout:
 
 ```
 Project.lidarforge/
@@ -96,6 +101,10 @@ Project.lidarforge/
 ├── textures/
 └── exports/
 ```
+
+### Continuation and relocalization
+
+Workflow continuation is implemented at the project level: project ID, stage progression, metrics, measurements, and stored artifacts remain available when reopening. True spatial relocalization across a later app session still requires persisting and restoring an `ARWorldMap`; this remains the next continuity milestone.
 
 ## Privacy
 
