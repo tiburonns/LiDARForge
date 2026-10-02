@@ -40,6 +40,9 @@ struct ScannerView: View {
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            controller.configure(for: projectType)
+        }
         .onDisappear {
             isRunning = false
         }
@@ -131,13 +134,15 @@ struct ScannerView: View {
             )
 
             metric(
-                title: "metric.speed",
-                value: controller.motionSpeed.formatted(.number.precision(.fractionLength(2))) + " m/s"
+                title: "metric.distance",
+                value: controller.centerDistanceMeters.map {
+                    $0.formatted(.number.precision(.fractionLength(2))) + " m"
+                } ?? "—"
             )
 
             metric(
-                title: "metric.points",
-                value: "\(controller.accumulatedPointCount)"
+                title: "metric.speed",
+                value: controller.motionSpeed.formatted(.number.precision(.fractionLength(2))) + " m/s"
             )
         }
         .padding(10)
