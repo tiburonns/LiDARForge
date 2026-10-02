@@ -14,7 +14,7 @@ Instead of exposing a single generic scan button, LiDARForge organizes capture b
 - **Interior** — rooms and indoor spaces.
 - **Exterior** — outdoor areas, facades, vehicles, and structures.
 - **Building** — multi-room / multi-zone architectural capture.
-- **3D Video / RGB-D** — synchronized color + depth capture (planned).
+- **3D Video / RGB-D** — synchronized RGB, depth, confidence, pose, intrinsics, and timestamps.
 
 ## Sensor tools
 
@@ -36,7 +36,7 @@ The first implementation includes a live AR/LiDAR workspace with:
 - Dense SceneDepth point-cloud accumulation with sparse AR fallback
 - Tracking and mesh statistics
 
-## Current milestone — 0.1 Foundation
+## Current milestone — 0.2 Capture Intelligence
 
 The repository contains an Xcode iOS application targeting iOS 17+ with:
 
@@ -52,8 +52,13 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Project snapshot persistence as JSON
 - Saved-project library with delete support
 - RoomPlan structural capture for Interior projects
-- RoomPlan room summary and USDZ mesh export
+- RoomPlan room summary, structural completeness, 2D plan preview, and USDZ mesh export
+- Multi-room RoomPlan building capture with StructureBuilder merge
 - Dense SceneDepth PLY export and sharing
+- RealityKit ObjectCaptureSession appearance workflow with object detection, guided passes, point-cloud preview, flip/new-pass flow, and capture sharing
+- RGB-D dataset recording into local `.lidarforge` datasets
+- Persistent project point-cloud artifacts and shareable `.lidarforge` project packages
+- Project detail screen with workflow progress and continuation
 - Pause/resume and interruption recovery without intentionally discarding the current scan
 - Sensor tools screen
 - CI build workflow
@@ -62,15 +67,15 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 
 ## Planned next milestones
 
-- Room completeness coaching and 2D floor-plan preview
-- Object Capture guided photogrammetry
-- Surface-aware coverage heatmap
-- RGB-D recording
-- Multi-room building projects
-- Mesh export
-- USDZ / OBJ / GLB export pipeline
-- Raw frame dataset export
-- Project package format (`.lidarforge`)
+- Mesh-projected surface-aware coverage heatmap
+- Missing-viewpoint and occlusion detection
+- Depth-confidence heatmap projected into reconstructed geometry
+- Persisted ARWorldMap / relocalization data for true later-session scan continuation
+- IMU stream inside RGB-D datasets
+- Mesh export and conversion
+- OBJ / STL / GLB / XYZ / LAS export pipeline
+- PDF / SVG / DXF architectural plan export
+- Physical-device QA, performance tuning, accessibility, and TestFlight hardening
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
