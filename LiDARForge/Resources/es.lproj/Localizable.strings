@@ -150,3 +150,10 @@
 "building.capture.complete" = "Estructura del edificio completada";
 "building.capture.mergedRooms" = "%d habitaciones combinadas";
 "building.capture.shareUSDZ" = "Compartir estructura";
+"measure.title" = "Medir";
+"measure.done" = "Terminar medición";
+"measure.tapFirst" = "Toca el primer punto";
+"measure.tapSecond" = "Toca el segundo punto";
+"measure.latest" = "Última distancia";
+"measure.count" = "%d mediciones";
+"measure.clear" = "Borrar";
