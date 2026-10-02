@@ -114,6 +114,38 @@ actor ProjectStore {
         return nil
     }
 
+    func saveWorldMap(
+        _ data: Data,
+        projectID: UUID
+    ) throws -> URL {
+        let root = try projectDirectory(for: projectID)
+        try FileManager.default.createDirectory(
+            at: root,
+            withIntermediateDirectories: true
+        )
+
+        let url = root.appendingPathComponent("worldmap.arexperience")
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
+    func loadWorldMap(projectID: UUID) throws -> Data? {
+        let url = try projectDirectory(for: projectID)
+            .appendingPathComponent("worldmap.arexperience")
+
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+
+        return try Data(contentsOf: url)
+    }
+
+    func hasWorldMap(projectID: UUID) throws -> Bool {
+        let url = try projectDirectory(for: projectID)
+            .appendingPathComponent("worldmap.arexperience")
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
     func buildSharePackage(projectID: UUID) throws -> URL {
         let source = try projectDirectory(for: projectID)
         guard FileManager.default.fileExists(atPath: source.path) else {
