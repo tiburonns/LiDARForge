@@ -1,3 +1,4 @@
+import Foundation
 import ARKit
 import RealityKit
 import SwiftUI
@@ -11,6 +12,7 @@ struct ARScannerView: UIViewRepresentable {
     var measurementMode: Bool = false
     var captureQuality: CaptureQualityMode = .balanced
     var rgbdRecorder: RGBDRecorder?
+    var initialWorldMapData: Data?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -24,6 +26,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setMeasurementMode(measurementMode)
         context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setRGBDRecorder(rgbdRecorder)
+        context.coordinator.setInitialWorldMapData(initialWorldMapData)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
         return view
@@ -34,8 +37,13 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setMeasurementMode(measurementMode)
         context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setRGBDRecorder(rgbdRecorder)
+        context.coordinator.setInitialWorldMapData(initialWorldMapData)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
+        context.coordinator.handleWorldMapSaveRequest(
+            controller.worldMapSaveRequestID,
+            on: uiView
+        )
     }
 
     static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
@@ -56,6 +64,8 @@ struct ARScannerView: UIViewRepresentable {
         private var measurementMode = false
         private var captureQuality: CaptureQualityMode = .balanced
         private weak var rgbdRecorder: RGBDRecorder?
+        private var initialWorldMapData: Data?
+        private var lastWorldMapSaveRequestID: UUID?
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -92,6 +102,51 @@ struct ARScannerView: UIViewRepresentable {
 
         func setRGBDRecorder(_ recorder: RGBDRecorder?) {
             rgbdRecorder = recorder
+        }
+
+        func setInitialWorldMapData(_ data: Data?) {
+            guard !hasStarted else { return }
+            initialWorldMapData = data
+        }
+
+        func handleWorldMapSaveRequest(
+            _ requestID: UUID?,
+            on view: ARView
+        ) {
+            guard let requestID,
+                  requestID != lastWorldMapSaveRequestID else {
+                return
+            }
+
+            lastWorldMapSaveRequestID = requestID
+
+            view.session.getCurrentWorldMap { [weak self] worldMap, error in
+                guard let self else { return }
+
+                if let error {
+                    Task { @MainActor [weak controller] in
+                        controller?.setSessionError(error.localizedDescription)
+                    }
+                    return
+                }
+
+                guard let worldMap else { return }
+
+                do {
+                    let data = try NSKeyedArchiver.archivedData(
+                        withRootObject: worldMap,
+                        requiringSecureCoding: true
+                    )
+
+                    Task { @MainActor [weak controller] in
+                        controller?.receiveWorldMapData(data)
+                    }
+                } catch {
+                    Task { @MainActor [weak controller] in
+                        controller?.setSessionError(error.localizedDescription)
+                    }
+                }
+            }
         }
 
         @objc
@@ -171,6 +226,15 @@ struct ARScannerView: UIViewRepresentable {
         ) {
             let configuration = ARWorldTrackingConfiguration()
             configuration.worldAlignment = .gravity
+
+            if resetTracking,
+               let data = initialWorldMapData,
+               let worldMap = try? NSKeyedUnarchiver.unarchivedObject(
+                    ofClass: ARWorldMap.self,
+                    from: data
+               ) {
+                configuration.initialWorldMap = worldMap
+            }
             configuration.planeDetection = [.horizontal, .vertical]
             configuration.environmentTexturing = .automatic
 
