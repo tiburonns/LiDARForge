@@ -165,3 +165,11 @@
 "roomplan.completeness" = "Completitud estructural";
 "roomplan.completeness.good" = "Los bordes estructurales tienen cobertura suficiente para esta pasada.";
 "roomplan.completeness.more" = "Algunos bordes estructurales siguen incompletos. Considera otra pasada antes de continuar.";
+"rgbd.title" = "Dataset RGB-D";
+"rgbd.subtitle" = "Graba RGB, profundidad LiDAR, confianza, pose de cámara, intrínsecos y timestamps sincronizados dentro de un paquete .lidarforge local.";
+"rgbd.recording" = "Grabando RGB-D";
+"rgbd.recording.subtitle" = "Mantén un movimiento fluido. Los frames se escriben localmente mientras continúa el escaneo.";
+"rgbd.start" = "Iniciar grabación";
+"rgbd.stop" = "Detener";
+"rgbd.finalizing" = "Finalizando dataset…";
+"rgbd.share" = "Compartir dataset";
