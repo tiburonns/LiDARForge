@@ -86,6 +86,10 @@ struct ScannerView: View {
         }
         .onAppear {
             controller.configure(for: projectType)
+            controller.setStage(stage)
+        }
+        .onChange(of: stage) { _, newStage in
+            controller.setStage(newStage)
         }
         .onDisappear {
             isRunning = false
