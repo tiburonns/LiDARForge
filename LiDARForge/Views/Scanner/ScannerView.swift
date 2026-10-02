@@ -13,6 +13,7 @@ struct ScannerView: View {
     @State private var statusMessage: String?
     @State private var exportURL: URL?
     @State private var showHealthReport = false
+    @State private var measurementMode = false
 
     @State private var projectID = UUID()
     @State private var projectCreatedAt = Date()
@@ -32,6 +33,7 @@ struct ScannerView: View {
                 viewMode: viewMode,
                 isRunning: isRunning,
                 allowsTargetLock: projectType == .object,
+                measurementMode: measurementMode,
                 captureQuality: appState.captureQuality
             )
             .ignoresSafeArea()
@@ -42,7 +44,9 @@ struct ScannerView: View {
                 sensorImage(image)
             }
 
-            if projectType == .object {
+            if measurementMode {
+                measurementReticle
+            } else if projectType == .object {
                 targetReticle
             }
 
@@ -50,8 +54,12 @@ struct ScannerView: View {
                 header
                 coachCard
 
-                if projectType == .object {
+                if projectType == .object, !measurementMode {
                     targetControls
+                }
+
+                if measurementMode {
+                    measurementCard
                 }
 
                 Spacer()
@@ -180,6 +188,80 @@ struct ScannerView: View {
             Spacer()
         }
         .allowsHitTesting(false)
+    }
+
+    private var measurementReticle: some View {
+        VStack {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .stroke(Color.blue, lineWidth: 2)
+                    .frame(width: 54, height: 54)
+
+                Image(systemName: "plus")
+                    .font(.caption.bold())
+                    .foregroundStyle(.blue)
+            }
+            .shadow(radius: 2)
+
+            Spacer()
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var measurementCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(
+                    controller.measurementDraftPointCount == 0
+                        ? "measure.tapFirst"
+                        : "measure.tapSecond",
+                    systemImage: "ruler"
+                )
+                .font(.caption.bold())
+
+                Spacer()
+
+                if !controller.measurements.isEmpty {
+                    Button("measure.clear") {
+                        controller.clearMeasurements()
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            if let latest = controller.measurements.first {
+                HStack {
+                    Text("measure.latest")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Text(
+                        latest.distanceMeters.formatted(
+                            .number.precision(.fractionLength(3))
+                        ) + " m"
+                    )
+                    .font(.headline.monospacedDigit())
+                }
+            }
+
+            if controller.measurements.count > 1 {
+                Text(
+                    String(
+                        format: String(localized: "measure.count"),
+                        controller.measurements.count
+                    )
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var targetControls: some View {
@@ -392,6 +474,23 @@ struct ScannerView: View {
             }
 
             HStack {
+                Button {
+                    measurementMode.toggle()
+                    if !measurementMode {
+                        controller.cancelMeasurementDraft()
+                    }
+                } label: {
+                    Label(
+                        measurementMode ? "measure.done" : "measure.title",
+                        systemImage: "ruler"
+                    )
+                }
+                .buttonStyle(
+                    measurementMode
+                        ? .borderedProminent
+                        : .bordered
+                )
+
                 Button {
                     showHealthReport = true
                 } label: {
