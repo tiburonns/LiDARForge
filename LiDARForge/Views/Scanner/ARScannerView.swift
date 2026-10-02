@@ -33,7 +33,9 @@ struct ARScannerView: UIViewRepresentable {
 
     final class Coordinator: NSObject, ARSessionDelegate {
         private let controller: LiDARSessionController
+        private weak var arView: ARView?
         private var running = false
+        private var hasStarted = false
         private var lastMetricsTimestamp: TimeInterval = 0
         private var lastPreviewTimestamp: TimeInterval = 0
 
@@ -42,6 +44,7 @@ struct ARScannerView: UIViewRepresentable {
         }
 
         func attach(to view: ARView) {
+            arView = view
             view.session.delegate = self
         }
 
@@ -50,32 +53,51 @@ struct ARScannerView: UIViewRepresentable {
             running = shouldRun
 
             if shouldRun {
-                let configuration = ARWorldTrackingConfiguration()
-                configuration.worldAlignment = .gravity
-                configuration.planeDetection = [.horizontal, .vertical]
-                configuration.environmentTexturing = .automatic
-
-                if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
-                    configuration.sceneReconstruction = .meshWithClassification
-                } else if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
-                    configuration.sceneReconstruction = .mesh
-                }
-
-                if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-                    configuration.frameSemantics.insert(.sceneDepth)
-                }
-
-                if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-                    configuration.frameSemantics.insert(.smoothedSceneDepth)
-                }
-
-                view.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-
-                Task { @MainActor [weak controller] in
-                    controller?.reset()
-                }
+                runSession(
+                    on: view,
+                    resetTracking: !hasStarted,
+                    clearPointCloud: !hasStarted
+                )
+                hasStarted = true
             } else {
                 view.session.pause()
+            }
+        }
+
+        private func runSession(
+            on view: ARView,
+            resetTracking: Bool,
+            clearPointCloud: Bool
+        ) {
+            let configuration = ARWorldTrackingConfiguration()
+            configuration.worldAlignment = .gravity
+            configuration.planeDetection = [.horizontal, .vertical]
+            configuration.environmentTexturing = .automatic
+
+            if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
+                configuration.sceneReconstruction = .meshWithClassification
+            } else if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+                configuration.sceneReconstruction = .mesh
+            }
+
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+                configuration.frameSemantics.insert(.sceneDepth)
+            }
+
+            if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                configuration.frameSemantics.insert(.smoothedSceneDepth)
+            }
+
+            let options: ARSession.RunOptions = resetTracking
+                ? [.resetTracking, .removeExistingAnchors]
+                : []
+
+            view.session.run(configuration, options: options)
+
+            if resetTracking {
+                Task { @MainActor [weak controller] in
+                    controller?.reset(clearPointCloud: clearPointCloud)
+                }
             }
         }
 
@@ -133,7 +155,8 @@ struct ARScannerView: UIViewRepresentable {
             )
 
             let tracking = LiDARFrameProcessor.trackingDescription(frame.camera.trackingState)
-            let points = frame.rawFeaturePoints?.points.count ?? 0
+            let trackingNormal = LiDARFrameProcessor.isTrackingNormal(frame.camera.trackingState)
+            let points = frame.rawFeaturePoints.map { Array($0.points) } ?? []
             let meshes = frame.anchors.reduce(into: 0) { count, anchor in
                 if anchor is ARMeshAnchor { count += 1 }
             }
@@ -146,14 +169,37 @@ struct ARScannerView: UIViewRepresentable {
                     featurePoints: points,
                     meshAnchors: meshes,
                     tracking: tracking,
+                    trackingIsNormal: trackingNormal,
                     yaw: yaw,
                     pitch: pitch,
                     cameraPosition: position,
+                    timestamp: frame.timestamp,
                     depthResolution: resolution,
                     confidence: confidence,
                     depthPreview: depthPreview,
                     confidencePreview: confidencePreview
                 )
+            }
+        }
+
+        func sessionWasInterrupted(_ session: ARSession) {
+            Task { @MainActor [weak controller] in
+                controller?.setInterrupted(true)
+            }
+        }
+
+        func sessionInterruptionEnded(_ session: ARSession) {
+            Task { @MainActor [weak controller] in
+                controller?.setInterrupted(false)
+            }
+
+            guard running, let arView else { return }
+            runSession(on: arView, resetTracking: false, clearPointCloud: false)
+        }
+
+        func session(_ session: ARSession, didFailWithError error: Error) {
+            Task { @MainActor [weak controller] in
+                controller?.setSessionError(error.localizedDescription)
             }
         }
     }
