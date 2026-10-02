@@ -52,6 +52,18 @@ For Object projects, the coach can lock a world-space target from an AR raycast.
 
 The global coverage score is still deliberately called an **estimate**. The directional grid is useful guidance, but it is not yet the final mesh-projected visibility heatmap planned for Coverage Coach 2.
 
+### Surface Coverage 3D
+
+The scanner samples vertices from ARKit mesh anchors and quantizes them into world-space surface voxels. SceneDepth points are back-projected into the same coordinate system and increment coverage/confidence for matching cells. A bounded subset of weak and strong cells is published to the UI and rendered directly in the AR world as red / yellow / green surface markers.
+
+Coverage state is persisted with the project, restored on resume, and blended with project-specific movement, geometry, depth, and directional coverage metrics.
+
+### Missing Viewpoint Coach
+
+For Object projects, the coach derives the weakest directional sector around the locked ROI and compares it with the current camera position to recommend a horizontal move plus high / level / low camera placement.
+
+For non-object projects, the coach selects a weak mesh-surface coverage cell and compares its world-space bearing and elevation with the camera pose to recommend the next viewpoint.
+
 ### Point-cloud pipeline
 
 LiDARForge currently keeps two point sources:
@@ -104,7 +116,15 @@ Project.lidarforge/
 
 ### Continuation and relocalization
 
-Workflow continuation is implemented at the project level: project ID, stage progression, metrics, measurements, and stored artifacts remain available when reopening. True spatial relocalization across a later app session still requires persisting and restoring an `ARWorldMap`; this remains the next continuity milestone.
+Workflow continuation preserves project ID, stage progression, metrics, measurements, object ROI, sampled surface-coverage state, point-cloud artifacts, and captured source sessions. An `ARWorldMap` is archived on project save and supplied as the next AR session's `initialWorldMap`, allowing ARKit to attempt physical relocalization in the previously scanned space.
+
+### Source-data persistence
+
+When Source Archive is enabled for a normal scan, LiDARForge records sampled RGB JPEG frames, Float32 SceneDepth, UInt8 confidence maps, camera transforms, camera intrinsics, timestamps, and CoreMotion device-motion samples under the project `sources/` directory. Video projects use the same recorder as a standalone RGB-D dataset workflow. These source files are intentionally retained so future reconstruction algorithms can reprocess a project without requiring a new scan.
+
+### Tool customization
+
+`WorkspaceTool` preferences are stored in `AppState`. Capture functions and sensor tools can be enabled/disabled and reordered independently. Scanner quick controls and sensor-mode choices consume the same preferences, keeping the layout consistent across sessions.
 
 ## Privacy
 
