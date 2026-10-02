@@ -38,6 +38,7 @@ struct ARScannerView: UIViewRepresentable {
         private var hasStarted = false
         private var lastMetricsTimestamp: TimeInterval = 0
         private var lastPreviewTimestamp: TimeInterval = 0
+        private var lastPointCloudTimestamp: TimeInterval = 0
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -158,6 +159,21 @@ struct ARScannerView: UIViewRepresentable {
             let tracking = LiDARFrameProcessor.trackingDescription(frame.camera.trackingState)
             let trackingNormal = LiDARFrameProcessor.isTrackingNormal(frame.camera.trackingState)
             let points = frame.rawFeaturePoints.map { Array($0.points) } ?? []
+
+            var densePoints: [SIMD3<Float>] = []
+            if trackingNormal,
+               frame.timestamp - lastPointCloudTimestamp >= 0.50,
+               let depth {
+                lastPointCloudTimestamp = frame.timestamp
+                densePoints = DepthPointCloudBuilder.worldPoints(
+                    depthMap: depth.depthMap,
+                    confidenceMap: depth.confidenceMap,
+                    camera: frame.camera,
+                    sampleStride: 6,
+                    minimumConfidence: 1,
+                    maximumDepth: 6.0
+                )
+            }
             let meshes = frame.anchors.reduce(into: 0) { count, anchor in
                 if anchor is ARMeshAnchor { count += 1 }
             }
@@ -179,7 +195,8 @@ struct ARScannerView: UIViewRepresentable {
                     confidence: confidence,
                     depthStatistics: depthStatistics,
                     depthPreview: depthPreview,
-                    confidencePreview: confidencePreview
+                    confidencePreview: confidencePreview,
+                    densePoints: densePoints
                 )
             }
         }
