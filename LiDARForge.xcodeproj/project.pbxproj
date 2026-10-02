@@ -25,6 +25,7 @@
 		A10000000000000000000010 /* PointCloudExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000013 /* PointCloudExporter.swift */; };
 		A10000000000000000000011 /* ProjectsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000014 /* ProjectsView.swift */; };
 		A10000000000000000000012 /* RoomPlanProjectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000015 /* RoomPlanProjectView.swift */; };
+		A10000000000000000000013 /* RGBDRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* RGBDRecorder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,6 +50,7 @@
 		B10000000000000000000013 /* PointCloudExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Services/PointCloudExporter.swift; sourceTree = "<group>"; };
 		B10000000000000000000014 /* ProjectsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Views/ProjectsView.swift; sourceTree = "<group>"; };
 		B10000000000000000000015 /* RoomPlanProjectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Views/RoomPlanProjectView.swift; sourceTree = "<group>"; };
+		B10000000000000000000016 /* RGBDRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Services/RGBDRecorder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +75,7 @@
 				B10000000000000000000006 /* ProjectStore.swift */,
 				B10000000000000000000007 /* LiDARSessionController.swift */,
 				B10000000000000000000013 /* PointCloudExporter.swift */,
+				B10000000000000000000016 /* RGBDRecorder.swift */,
 				B10000000000000000000008 /* HomeView.swift */,
 				B10000000000000000000014 /* ProjectsView.swift */,
 				B10000000000000000000015 /* RoomPlanProjectView.swift */,
@@ -174,6 +177,7 @@
 				A10000000000000000000006 /* ProjectStore.swift in Sources */,
 				A10000000000000000000007 /* LiDARSessionController.swift in Sources */,
 				A10000000000000000000010 /* PointCloudExporter.swift in Sources */,
+				A10000000000000000000013 /* RGBDRecorder.swift in Sources */,
 				A10000000000000000000008 /* HomeView.swift in Sources */,
 				A10000000000000000000011 /* ProjectsView.swift in Sources */,
 				A10000000000000000000012 /* RoomPlanProjectView.swift in Sources */,
