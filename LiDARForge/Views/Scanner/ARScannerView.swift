@@ -8,6 +8,7 @@ struct ARScannerView: UIViewRepresentable {
     var viewMode: SensorViewMode
     var isRunning: Bool
     var allowsTargetLock: Bool = false
+    var measurementMode: Bool = false
     var captureQuality: CaptureQualityMode = .balanced
 
     func makeCoordinator() -> Coordinator {
@@ -19,6 +20,7 @@ struct ARScannerView: UIViewRepresentable {
         view.automaticallyConfigureSession = false
         context.coordinator.attach(to: view)
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
+        context.coordinator.setMeasurementMode(measurementMode)
         context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
@@ -27,6 +29,7 @@ struct ARScannerView: UIViewRepresentable {
 
     func updateUIView(_ uiView: ARView, context: Context) {
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
+        context.coordinator.setMeasurementMode(measurementMode)
         context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
@@ -46,6 +49,7 @@ struct ARScannerView: UIViewRepresentable {
         private var lastPreviewTimestamp: TimeInterval = 0
         private var lastPointCloudTimestamp: TimeInterval = 0
         private var allowsTargetLock = false
+        private var measurementMode = false
         private var captureQuality: CaptureQualityMode = .balanced
 
         init(controller: LiDARSessionController) {
@@ -68,13 +72,22 @@ struct ARScannerView: UIViewRepresentable {
             allowsTargetLock = allowed
         }
 
+        func setMeasurementMode(_ enabled: Bool) {
+            measurementMode = enabled
+            if !enabled {
+                Task { @MainActor [weak controller] in
+                    controller?.cancelMeasurementDraft()
+                }
+            }
+        }
+
         func setCaptureQuality(_ quality: CaptureQualityMode) {
             captureQuality = quality
         }
 
         @objc
         private func handleTargetTap(_ gesture: UITapGestureRecognizer) {
-            guard allowsTargetLock,
+            guard (allowsTargetLock || measurementMode),
                   gesture.state == .ended,
                   let view = arView else {
                 return
@@ -105,6 +118,15 @@ struct ARScannerView: UIViewRepresentable {
                 )
             } else {
                 cameraPosition = nil
+            }
+
+            if measurementMode {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+                Task { @MainActor [weak controller] in
+                    controller?.addMeasurementPoint(target)
+                }
+                return
             }
 
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
