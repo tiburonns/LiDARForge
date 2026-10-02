@@ -7,6 +7,7 @@ struct ARScannerView: UIViewRepresentable {
     @ObservedObject var controller: LiDARSessionController
     var viewMode: SensorViewMode
     var isRunning: Bool
+    var allowsTargetLock: Bool = false
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -16,12 +17,14 @@ struct ARScannerView: UIViewRepresentable {
         let view = ARView(frame: .zero)
         view.automaticallyConfigureSession = false
         context.coordinator.attach(to: view)
+        context.coordinator.setAllowsTargetLock(allowsTargetLock)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
         return view
     }
 
     func updateUIView(_ uiView: ARView, context: Context) {
+        context.coordinator.setAllowsTargetLock(allowsTargetLock)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
     }
@@ -39,6 +42,7 @@ struct ARScannerView: UIViewRepresentable {
         private var lastMetricsTimestamp: TimeInterval = 0
         private var lastPreviewTimestamp: TimeInterval = 0
         private var lastPointCloudTimestamp: TimeInterval = 0
+        private var allowsTargetLock = false
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -47,6 +51,62 @@ struct ARScannerView: UIViewRepresentable {
         func attach(to view: ARView) {
             arView = view
             view.session.delegate = self
+
+            let tap = UITapGestureRecognizer(
+                target: self,
+                action: #selector(handleTargetTap(_:))
+            )
+            tap.cancelsTouchesInView = false
+            view.addGestureRecognizer(tap)
+        }
+
+        func setAllowsTargetLock(_ allowed: Bool) {
+            allowsTargetLock = allowed
+        }
+
+        @objc
+        private func handleTargetTap(_ gesture: UITapGestureRecognizer) {
+            guard allowsTargetLock,
+                  gesture.state == .ended,
+                  let view = arView else {
+                return
+            }
+
+            let location = gesture.location(in: view)
+            guard let result = view.raycast(
+                from: location,
+                allowing: .estimatedPlane,
+                alignment: .any
+            ).first else {
+                return
+            }
+
+            let transform = result.worldTransform
+            let target = SIMD3<Float>(
+                transform.columns.3.x,
+                transform.columns.3.y,
+                transform.columns.3.z
+            )
+
+            let cameraPosition: SIMD3<Float>?
+            if let cameraTransform = view.session.currentFrame?.camera.transform {
+                cameraPosition = SIMD3<Float>(
+                    cameraTransform.columns.3.x,
+                    cameraTransform.columns.3.y,
+                    cameraTransform.columns.3.z
+                )
+            } else {
+                cameraPosition = nil
+            }
+
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+            Task { @MainActor [weak controller] in
+                controller?.lockTarget(
+                    position: target,
+                    cameraPosition: cameraPosition
+                )
+            }
         }
 
         func setRunning(_ shouldRun: Bool, on view: ARView) {
