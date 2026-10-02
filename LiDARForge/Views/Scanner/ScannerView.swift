@@ -10,6 +10,7 @@ struct ScannerView: View {
     @State private var isRunning = true
     @State private var statusMessage: String?
     @State private var exportURL: URL?
+    @State private var showHealthReport = false
 
     @State private var projectID = UUID()
     @State private var projectCreatedAt = Date()
@@ -19,7 +20,8 @@ struct ScannerView: View {
             ARScannerView(
                 controller: controller,
                 viewMode: viewMode,
-                isRunning: isRunning
+                isRunning: isRunning,
+                allowsTargetLock: projectType == .object
             )
             .ignoresSafeArea()
 
@@ -29,10 +31,24 @@ struct ScannerView: View {
                 sensorImage(image)
             }
 
+            if projectType == .object {
+                targetReticle
+            }
+
             VStack(spacing: 12) {
                 header
                 coachCard
+
+                if projectType == .object {
+                    targetControls
+                }
+
                 Spacer()
+
+                if projectType == .object, controller.targetLocked {
+                    coverageHeatmap
+                }
+
                 metrics
                 modePicker
                 controls
@@ -40,6 +56,15 @@ struct ScannerView: View {
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showHealthReport) {
+            NavigationStack {
+                ScanHealthReportView(
+                    projectType: projectType,
+                    stage: stage,
+                    controller: controller
+                )
+            }
+        }
         .onAppear {
             controller.configure(for: projectType)
         }
@@ -119,6 +144,137 @@ struct ScannerView: View {
         }
         .padding(12)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var targetReticle: some View {
+        VStack {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .stroke(
+                        controller.targetLocked ? Color.green : Color.white,
+                        lineWidth: 2
+                    )
+                    .frame(width: 54, height: 54)
+
+                Circle()
+                    .fill(
+                        controller.targetLocked ? Color.green : Color.white
+                    )
+                    .frame(width: 5, height: 5)
+            }
+            .shadow(radius: 2)
+
+            Spacer()
+        }
+        .allowsHitTesting(false)
+    }
+
+    private var targetControls: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Label(
+                    controller.targetLocked
+                        ? "target.locked"
+                        : "target.tapToLock",
+                    systemImage: controller.targetLocked
+                        ? "scope"
+                        : "hand.tap"
+                )
+                .font(.caption.bold())
+
+                Spacer()
+
+                if controller.targetLocked {
+                    Button("target.clear") {
+                        controller.clearTarget()
+                    }
+                    .font(.caption)
+                    .buttonStyle(.bordered)
+                }
+            }
+
+            if controller.targetLocked {
+                HStack(spacing: 10) {
+                    Text("target.radius")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Slider(
+                        value: Binding(
+                            get: { controller.targetRadiusMeters },
+                            set: { controller.setTargetRadius($0) }
+                        ),
+                        in: 0.20...3.00,
+                        step: 0.05
+                    )
+
+                    Text(
+                        controller.targetRadiusMeters.formatted(
+                            .number.precision(.fractionLength(2))
+                        ) + " m"
+                    )
+                    .font(.caption2.monospacedDigit())
+                    .frame(width: 52, alignment: .trailing)
+                }
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var coverageHeatmap: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            HStack {
+                Label("coverage.map", systemImage: "square.grid.3x3.fill")
+                    .font(.caption.bold())
+
+                Spacer()
+
+                Text("coverage.directional")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+                ForEach(0..<3, id: \.self) { row in
+                    GridRow {
+                        ForEach(0..<8, id: \.self) { column in
+                            let value = controller.coverageSectors[row * 8 + column]
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(coverageColor(value))
+                                .frame(height: 12)
+                        }
+                    }
+                }
+            }
+
+            HStack(spacing: 12) {
+                legend(color: .red, key: "coverage.missing")
+                legend(color: .yellow, key: "coverage.partial")
+                legend(color: .green, key: "coverage.good")
+            }
+        }
+        .padding(10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func coverageColor(_ value: Double) -> Color {
+        if value >= 0.66 { return .green }
+        if value >= 0.25 { return .yellow }
+        return .red
+    }
+
+    private func legend(color: Color, key: LocalizedStringKey) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(color)
+                .frame(width: 7, height: 7)
+            Text(key)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var metrics: some View {
@@ -212,7 +368,11 @@ struct ScannerView: View {
                     .buttonStyle(.bordered)
                 } else {
                     Button {
-                        persist(stage: stage, showConfirmation: true)
+                        persist(
+                            stage: stage,
+                            showConfirmation: true,
+                            presentHealthReport: true
+                        )
                     } label: {
                         Label("scan.save", systemImage: "square.and.arrow.down")
                     }
@@ -221,6 +381,13 @@ struct ScannerView: View {
             }
 
             HStack {
+                Button {
+                    showHealthReport = true
+                } label: {
+                    Label("health.title", systemImage: "waveform.path.ecg")
+                }
+                .buttonStyle(.bordered)
+
                 Button {
                     exportPointCloud()
                 } label: {
@@ -242,7 +409,11 @@ struct ScannerView: View {
         }
     }
 
-    private func persist(stage: CaptureStage, showConfirmation: Bool) {
+    private func persist(
+        stage: CaptureStage,
+        showConfirmation: Bool,
+        presentHealthReport: Bool = false
+    ) {
         let project = ScanProject(
             id: projectID,
             createdAt: projectCreatedAt,
@@ -256,9 +427,12 @@ struct ScannerView: View {
         Task {
             do {
                 _ = try await ProjectStore.shared.save(project)
-                if showConfirmation {
-                    await MainActor.run {
+                await MainActor.run {
+                    if showConfirmation {
                         statusMessage = String(localized: "project.saved")
+                    }
+                    if presentHealthReport {
+                        showHealthReport = true
                     }
                 }
             } catch {
@@ -284,5 +458,161 @@ struct ScannerView: View {
         } catch {
             statusMessage = String(localized: "export.failed")
         }
+    }
+}
+
+
+private struct ScanHealthReportView: View {
+    let projectType: ProjectType
+    let stage: CaptureStage
+    @ObservedObject var controller: LiDARSessionController
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var densityScore: Double {
+        min(Double(controller.densePointCount) / 60_000.0, 1)
+    }
+
+    private var trackingScore: Double {
+        controller.trackingDescription == "Normal" ? 1 : 0.35
+    }
+
+    private var overallScore: Double {
+        let confidence = controller.confidence ?? 0.5
+        return min(
+            1,
+            controller.coverage * 0.35 +
+            controller.depthValidRatio * 0.20 +
+            confidence * 0.20 +
+            densityScore * 0.15 +
+            trackingScore * 0.10
+        )
+    }
+
+    var body: some View {
+        List {
+            Section {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("health.overall")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(
+                            overallScore.formatted(
+                                .percent.precision(.fractionLength(0))
+                            )
+                        )
+                        .font(.largeTitle.bold())
+                        .monospacedDigit()
+                    }
+
+                    Spacer()
+
+                    Image(systemName: healthSymbol)
+                        .font(.system(size: 34))
+                }
+            }
+
+            Section("health.capture") {
+                scoreRow("metric.coverage", controller.coverage)
+                scoreRow("health.depthValidity", controller.depthValidRatio)
+                scoreRow("metric.confidence", controller.confidence ?? 0)
+                scoreRow("health.pointDensity", densityScore)
+
+                LabeledContent("metric.tracking") {
+                    Text(controller.trackingDescription)
+                }
+
+                LabeledContent("health.densePoints") {
+                    Text("\(controller.densePointCount)")
+                        .monospacedDigit()
+                }
+            }
+
+            if projectType == .object {
+                Section("target.title") {
+                    LabeledContent("target.status") {
+                        Text(
+                            controller.targetLocked
+                                ? String(localized: "target.locked")
+                                : String(localized: "target.notLocked")
+                        )
+                    }
+
+                    if controller.targetLocked {
+                        LabeledContent("target.radius") {
+                            Text(
+                                controller.targetRadiusMeters.formatted(
+                                    .number.precision(.fractionLength(2))
+                                ) + " m"
+                            )
+                        }
+                    }
+                }
+            }
+
+            Section("health.recommendation") {
+                Label(
+                    LocalizedStringKey(recommendationKey),
+                    systemImage: recommendationSymbol
+                )
+            }
+        }
+        .navigationTitle("health.title")
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("common.ok") {
+                    dismiss()
+                }
+            }
+        }
+    }
+
+    private func scoreRow(
+        _ key: LocalizedStringKey,
+        _ value: Double
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(key)
+                Spacer()
+                Text(
+                    value.formatted(
+                        .percent.precision(.fractionLength(0))
+                    )
+                )
+                .monospacedDigit()
+            }
+            ProgressView(value: min(max(value, 0), 1))
+        }
+    }
+
+    private var healthSymbol: String {
+        if overallScore >= 0.80 { return "checkmark.seal.fill" }
+        if overallScore >= 0.55 { return "exclamationmark.triangle.fill" }
+        return "arrow.triangle.2.circlepath"
+    }
+
+    private var recommendationKey: String {
+        if controller.trackingDescription != "Normal" {
+            return "health.recommend.tracking"
+        }
+        if controller.depthValidRatio < 0.35 {
+            return "health.recommend.depth"
+        }
+        if projectType == .object, !controller.targetLocked {
+            return "health.recommend.target"
+        }
+        if controller.coverage < projectType.captureProfile.targetCoverage {
+            return "health.recommend.coverage"
+        }
+        if densityScore < 0.40 {
+            return "health.recommend.density"
+        }
+        return "health.recommend.ready"
+    }
+
+    private var recommendationSymbol: String {
+        overallScore >= 0.80 ? "checkmark.circle" : "lightbulb"
     }
 }
