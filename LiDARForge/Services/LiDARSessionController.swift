@@ -78,6 +78,7 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var thermalDescription: String = "Nominal"
     @Published private(set) var recommendedReady = false
     @Published private(set) var accumulatedPointCount = 0
+    @Published private(set) var densePointCount = 0
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
     @Published private(set) var supportsMesh = ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh)
 
@@ -86,6 +87,8 @@ final class LiDARSessionController: ObservableObject {
     private var spatialCells = Set<String>()
     private var pointKeys = Set<PointKey>()
     private var pointCloudPoints: [SIMD3<Float>] = []
+    private var densePointKeys = Set<PointKey>()
+    private var densePointCloudPoints: [SIMD3<Float>] = []
     private var startedAt = Date()
     private var lastPosition: SIMD3<Float>?
     private var lastTimestamp: TimeInterval?
@@ -127,7 +130,10 @@ final class LiDARSessionController: ObservableObject {
         if clearPointCloud {
             pointKeys.removeAll(keepingCapacity: true)
             pointCloudPoints.removeAll(keepingCapacity: true)
+            densePointKeys.removeAll(keepingCapacity: true)
+            densePointCloudPoints.removeAll(keepingCapacity: true)
             accumulatedPointCount = 0
+            densePointCount = 0
         }
     }
 
@@ -155,7 +161,8 @@ final class LiDARSessionController: ObservableObject {
         confidence: Double?,
         depthStatistics: DepthStatistics,
         depthPreview: UIImage?,
-        confidencePreview: UIImage?
+        confidencePreview: UIImage?,
+        densePoints: [SIMD3<Float>] = []
     ) {
         featurePointCount = featurePoints.count
         meshAnchorCount = meshAnchors
@@ -174,6 +181,7 @@ final class LiDARSessionController: ObservableObject {
 
         updateMotion(position: cameraPosition, timestamp: timestamp)
         accumulate(points: featurePoints)
+        accumulateDense(points: densePoints)
 
         let yawBin = Int(((Double(yaw) + .pi) / (2 * .pi) * 12).rounded(.down))
         let pitchBand = Int(((Double(pitch) + (.pi / 2)) / .pi * 3).rounded(.down))
@@ -216,8 +224,18 @@ final class LiDARSessionController: ObservableObject {
         )
     }
 
-    func pointCloudSnapshot() -> [SIMD3<Float>] {
-        pointCloudPoints
+    func bestPointCloudSnapshot() -> PointCloudSnapshot {
+        if !densePointCloudPoints.isEmpty {
+            return PointCloudSnapshot(
+                points: densePointCloudPoints,
+                source: .sceneDepth
+            )
+        }
+
+        return PointCloudSnapshot(
+            points: pointCloudPoints,
+            source: .featurePoints
+        )
     }
 
     private func updateMotion(position: SIMD3<Float>, timestamp: TimeInterval) {
@@ -257,6 +275,28 @@ final class LiDARSessionController: ObservableObject {
         }
 
         accumulatedPointCount = pointCloudPoints.count
+    }
+
+    private func accumulateDense(points: [SIMD3<Float>]) {
+        guard !points.isEmpty, densePointCloudPoints.count < 250_000 else {
+            return
+        }
+
+        // 2 cm world-space voxel deduplication keeps long captures bounded.
+        for point in points {
+            let key = PointKey(
+                x: Int((point.x / 0.02).rounded()),
+                y: Int((point.y / 0.02).rounded()),
+                z: Int((point.z / 0.02).rounded())
+            )
+
+            if densePointKeys.insert(key).inserted {
+                densePointCloudPoints.append(point)
+                if densePointCloudPoints.count >= 250_000 { break }
+            }
+        }
+
+        densePointCount = densePointCloudPoints.count
     }
 
     private func guidance(
