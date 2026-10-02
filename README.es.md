@@ -29,6 +29,10 @@ La primera implementación incluye:
 - Visualización tipo visión nocturna mediante profundidad
 - Estimación de cobertura
 - Guía de velocidad y distancia adaptada al tipo de proyecto
+- ROI de objeto fijado por toque con filtrado de fondo
+- Mapa direccional de cobertura de 24 sectores para objetos
+- Informe de Salud del escaneo con recomendaciones prácticas
+- Modos de calidad Rápido / Equilibrado / Máximo
 - Acumulación de nube de puntos densa desde SceneDepth con respaldo de puntos AR
 - Métricas de tracking y malla
 
@@ -47,6 +51,8 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Previsualización de profundidad y mapa de confianza
 - Persistencia de snapshots del proyecto en JSON
 - Biblioteca de proyectos guardados con eliminación
+- Captura estructural RoomPlan para proyectos de Interior
+- Resumen de habitación RoomPlan y exportación de malla USDZ
 - Exportación y compartición PLY densa desde SceneDepth
 - Recuperación de pausa/reanudación e interrupciones sin descartar intencionalmente el escaneo actual
 - Pantalla de herramientas del sensor
@@ -56,7 +62,7 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 
 ## Próximos hitos
 
-- Captura de interiores con RoomPlan
+- Guía de completitud de habitación y vista de plano 2D
 - Fotogrametría guiada con Object Capture
 - Mapa de cobertura por superficie
 - Grabación RGB-D
