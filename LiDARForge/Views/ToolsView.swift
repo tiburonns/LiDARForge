@@ -60,7 +60,7 @@ struct ToolsView: View {
                 Image(systemName: tool.symbol)
                     .font(.title2)
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Color.accentColor)
 
                 Spacer()
 
