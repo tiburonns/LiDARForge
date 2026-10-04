@@ -218,59 +218,67 @@ struct ScannerView: View {
     }
 
     private var compactProgressPanel: some View {
-        Button {
-            withAnimation(.snappy) {
-                showDetails.toggle()
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    Image(systemName: projectType.symbol)
-                        .symbolRenderingMode(.hierarchical)
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.snappy) {
+                    showDetails.toggle()
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
+                        Image(systemName: projectType.symbol)
+                            .symbolRenderingMode(.hierarchical)
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(LocalizedStringKey(stage.titleKey))
-                            .font(.headline)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(LocalizedStringKey(stage.titleKey))
+                                .font(.headline)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.82)
 
-                        Text(
-                            controller.coverage,
-                            format: .percent.precision(.fractionLength(0))
+                            Text(
+                                controller.coverage,
+                                format: .percent.precision(.fractionLength(0))
+                            )
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        if controller.recommendedReady {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+
+                        Image(
+                            systemName: showDetails
+                                ? "chevron.up"
+                                : "chevron.down"
                         )
-                        .font(.caption.monospacedDigit())
+                        .font(.caption.bold())
                         .foregroundStyle(.secondary)
                     }
 
-                    Spacer()
-
-                    if controller.recommendedReady {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    }
-
-                    Image(
-                        systemName: showDetails
-                            ? "chevron.up"
-                            : "chevron.down"
-                    )
-                    .font(.caption.bold())
-                    .foregroundStyle(.secondary)
+                    ProgressView(value: controller.coverage)
                 }
-
-                ProgressView(value: controller.coverage)
-
-                if showDetails {
-                    expandedProgressDetails
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                .contentShape(Rectangle())
             }
-            .padding(14)
-            .background(
-                .ultraThinMaterial,
-                in: RoundedRectangle(cornerRadius: 20)
-            )
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+
+            if showDetails {
+                expandedProgressDetails
+                    .transition(
+                        .opacity.combined(
+                            with: .move(edge: .top)
+                        )
+                    )
+            }
         }
-        .buttonStyle(.plain)
+        .padding(14)
+        .background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 20)
+        )
     }
 
     private var expandedProgressDetails: some View {
