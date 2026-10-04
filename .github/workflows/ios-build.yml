@@ -1,5 +1,9 @@
 name: iOS Build
 
+permissions:
+  contents: read
+  statuses: write
+
 on:
   push:
     branches: [main]
@@ -39,6 +43,22 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
           exit "$status"
+
+      - name: Publish build diagnostic
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          diagnostic=$(grep -m1 -E "error:" build.log | sed -E 's/^[^:]+:[0-9]+:[0-9]+: error: //' | tr '\n' ' ' | cut -c1-130)
+          if [ -z "$diagnostic" ]; then
+            diagnostic="Xcode build failed; inspect workflow logs."
+          fi
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=failure \
+            -f context="xcode-diagnostic" \
+            -f description="$diagnostic"
 
       - name: Static Analyze
         shell: bash
