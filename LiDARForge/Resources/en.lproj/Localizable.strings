@@ -37,7 +37,7 @@
 "tool.confidence" = "Confidence Map";
 "tool.points" = "Feature Points";
 "tool.mesh" = "LiDAR Mesh";
-"tool.raw" = "Raw Sensor Inspector";
+"tool.raw" = "Raw Sensor Data";
 
 "metric.coverage" = "Coverage";
 "metric.confidence" = "Confidence";
@@ -255,7 +255,7 @@
 "customize.confidence.subtitle" = "Inspect per-pixel LiDAR confidence.";
 "customize.points.subtitle" = "Show AR tracking feature points.";
 "customize.mesh.subtitle" = "Show reconstructed scene geometry.";
-"customize.raw.subtitle" = "Inspect raw tracking and sensor overlays.";
+"customize.raw.subtitle" = "Show direct ARKit telemetry: pose, orientation, tracking, depth, confidence, and exposure.";
 
 "coverage.surface" = "3D surface coverage";
 "coverage.show3d" = "Show Coverage Gaps";
@@ -312,3 +312,9 @@
 "scan.projectTools" = "Project Tools";
 "measure.active" = "Measurement mode active";
 "target.reselect" = "Select Target Again";
+
+"raw.position" = "XYZ position";
+"raw.orientation" = "Orientation";
+"raw.timestamp" = "Timestamp";
+"raw.validDepth" = "Valid depth";
+"raw.exposure" = "Exposure";
