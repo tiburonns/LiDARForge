@@ -17,21 +17,48 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer || true
 
       - name: Build
+        id: build
+        shell: bash
         run: |
+          set +e
           xcodebuild \
             -project LiDARForge.xcodeproj \
             -scheme LiDARForge \
             -sdk iphonesimulator \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build 2>&1 | tee build.log
+          status=${PIPESTATUS[0]}
+
+          {
+            echo "### Build diagnostics"
+            echo
+            echo '```text'
+            grep -E "error:|warning:" build.log | tail -n 120 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"
 
       - name: Static Analyze
+        shell: bash
         run: |
+          set +e
           xcodebuild \
             -project LiDARForge.xcodeproj \
             -scheme LiDARForge \
             -sdk iphonesimulator \
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
-            analyze
+            analyze 2>&1 | tee analyze.log
+          status=${PIPESTATUS[0]}
+
+          {
+            echo "### Static-analysis diagnostics"
+            echo
+            echo '```text'
+            grep -E "error:|warning:" analyze.log | tail -n 120 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          exit "$status"
