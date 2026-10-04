@@ -6,6 +6,7 @@ struct ScannerView: View {
     private let existingProject: ScanProject?
 
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
 
     @StateObject private var controller = LiDARSessionController()
     @StateObject private var rgbdRecorder = RGBDRecorder()
