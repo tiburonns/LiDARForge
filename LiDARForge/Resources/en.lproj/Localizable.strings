@@ -285,7 +285,7 @@
 "import.success" = "LiDARForge project imported. It is now available in Projects.";
 "import.failed" = "The LiDARForge project could not be imported: %@";
 
-"home.hero.title" = "Spatial capture, without the clutter";
+"home.hero.title" = "Spatial Capture";
 "home.hero.subtitle" = "Choose the right project, scan with guidance, and keep every useful sensor layer available when you need it.";
 "home.lidar.ready" = "LiDAR ready";
 "home.lidar.limited" = "Limited sensor support";
