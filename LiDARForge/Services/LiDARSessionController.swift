@@ -1,6 +1,7 @@
 import ARKit
 import Combine
 import CoreGraphics
+import CoreImage
 import CoreVideo
 import Foundation
 import simd
@@ -946,6 +947,40 @@ final class LiDARSessionController: ObservableObject {
 }
 
 enum LiDARFrameProcessor {
+    private static let cameraCIContext = CIContext(
+        options: [.cacheIntermediates: false]
+    )
+
+    static func cameraImage(
+        from pixelBuffer: CVPixelBuffer,
+        maxDimension: CGFloat = 1280
+    ) -> UIImage? {
+        var image = CIImage(cvPixelBuffer: pixelBuffer)
+            .oriented(.right)
+
+        let extent = image.extent
+        let longestSide = max(extent.width, extent.height)
+
+        if longestSide > maxDimension {
+            let scale = maxDimension / longestSide
+            image = image.transformed(
+                by: CGAffineTransform(
+                    scaleX: scale,
+                    y: scale
+                )
+            )
+        }
+
+        guard let cgImage = cameraCIContext.createCGImage(
+            image,
+            from: image.extent
+        ) else {
+            return nil
+        }
+
+        return UIImage(cgImage: cgImage)
+    }
+
     static func trackingDescription(_ state: ARCamera.TrackingState) -> String {
         switch state {
         case .normal:
