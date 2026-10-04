@@ -244,8 +244,8 @@
 "customize.measurements.subtitle" = "Measure point-to-point distances inside the spatial scene.";
 "customize.scanHealth" = "Scan Health";
 "customize.scanHealth.subtitle" = "Review capture quality, depth validity, density, and tracking.";
-"customize.coverageHeatmap" = "3D Coverage Heatmap";
-"customize.coverageHeatmap.subtitle" = "Overlay red, yellow, and green coverage samples on reconstructed surfaces.";
+"customize.coverageHeatmap" = "3D Coverage Gaps";
+"customize.coverageHeatmap.subtitle" = "Highlight only weak or missing reconstructed areas; markers fade away as coverage improves.";
 "customize.pointCloudExport" = "Point Cloud Export";
 "customize.pointCloudExport.subtitle" = "Export the best available SceneDepth or AR feature-point PLY.";
 "customize.sourceArchive" = "Source Archive";
@@ -258,8 +258,8 @@
 "customize.raw.subtitle" = "Inspect raw tracking and sensor overlays.";
 
 "coverage.surface" = "3D surface coverage";
-"coverage.show3d" = "Show 3D Heatmap";
-"coverage.hide3d" = "Hide 3D Heatmap";
+"coverage.show3d" = "Show Coverage Gaps";
+"coverage.hide3d" = "Hide Coverage Gaps";
 "viewpoint.title" = "Missing Viewpoint";
 "viewpoint.left" = "Move about %d° left around the missing area.";
 "viewpoint.right" = "Move about %d° right around the missing area.";
