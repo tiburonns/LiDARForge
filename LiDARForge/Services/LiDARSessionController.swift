@@ -113,6 +113,7 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var depthResolution: CGSize = .zero
     @Published private(set) var depthPreview: UIImage?
     @Published private(set) var confidencePreview: UIImage?
+    @Published private(set) var cameraPreview: UIImage?
     @Published private(set) var captureGuidance: CaptureGuidance = .initializing
     @Published private(set) var motionSpeed: Double = 0
     @Published private(set) var isInterrupted = false
@@ -327,6 +328,7 @@ final class LiDARSessionController: ObservableObject {
         depthResolution = .zero
         depthPreview = nil
         confidencePreview = nil
+        cameraPreview = nil
         captureGuidance = .initializing
         motionSpeed = 0
         cameraPosition = .zero
@@ -393,6 +395,7 @@ final class LiDARSessionController: ObservableObject {
         depthStatistics: DepthStatistics,
         depthPreview: UIImage?,
         confidencePreview: UIImage?,
+        cameraPreview: UIImage? = nil,
         densePoints: [SIMD3<Float>] = [],
         meshSurfacePoints: [SIMD3<Float>] = []
     ) {
@@ -415,6 +418,9 @@ final class LiDARSessionController: ObservableObject {
         }
         if let confidencePreview {
             self.confidencePreview = confidencePreview
+        }
+        if let cameraPreview {
+            self.cameraPreview = cameraPreview
         }
 
         updateMotion(position: cameraPosition, timestamp: timestamp)
