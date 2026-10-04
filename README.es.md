@@ -63,6 +63,11 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Archivos de fuentes RGB/profundidad/confianza/pose/intrínsecos/timestamps/IMU por proyecto para reprocesado posterior
 - Coach de perspectiva faltante derivado de cobertura direccional y superficies de la malla
 - Pantalla de detalle de proyecto con progreso y continuación del flujo
+- Inicio y Herramientas del sensor rediseñados con tarjetas visuales
+- HUD mínimo durante el escaneo: progreso/desplegable superior y una sola hoja de Opciones contextual al proyecto
+- Herramientas del sensor dedicadas, sin selector de modo redundante dentro de cada herramienta
+- Vista de Confianza optimizada para evitar muestreo simultáneo pesado de nube densa y malla
+- Overlay ligero de zonas de cobertura faltante en lugar del heatmap anterior saturado de esferas
 - Recuperación de pausa/reanudación e interrupciones sin descartar intencionalmente el escaneo actual
 - Pantalla de herramientas del sensor
 - Workflow CI de compilación
