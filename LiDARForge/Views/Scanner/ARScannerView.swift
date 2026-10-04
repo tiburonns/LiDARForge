@@ -15,7 +15,6 @@ struct ARScannerView: UIViewRepresentable {
     var initialWorldMapData: Data?
     var showSurfaceHeatmap: Bool = false
     var captureWorkspace: Bool = true
-    var sessionRefreshID: UUID?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -33,10 +32,6 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setCaptureWorkspace(captureWorkspace)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
-        context.coordinator.handleSessionRefresh(
-            sessionRefreshID,
-            on: view
-        )
         context.coordinator.setSurfaceHeatmap(
             showSurfaceHeatmap,
             cells: controller.surfaceCoverageCells,
@@ -54,10 +49,6 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setCaptureWorkspace(captureWorkspace)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
-        context.coordinator.handleSessionRefresh(
-            sessionRefreshID,
-            on: uiView
-        )
         context.coordinator.setSurfaceHeatmap(
             showSurfaceHeatmap,
             cells: controller.surfaceCoverageCells,
@@ -96,7 +87,6 @@ struct ARScannerView: UIViewRepresentable {
         private var currentViewMode: SensorViewMode = .camera
         private var initialWorldMapData: Data?
         private var lastWorldMapSaveRequestID: UUID?
-        private var lastSessionRefreshID: UUID?
         private var heatmapAnchor: AnchorEntity?
         private var featurePointAnchor: AnchorEntity?
 
@@ -135,24 +125,6 @@ struct ARScannerView: UIViewRepresentable {
 
         func setCaptureWorkspace(_ enabled: Bool) {
             captureWorkspace = enabled
-        }
-
-        func handleSessionRefresh(
-            _ refreshID: UUID?,
-            on view: ARView
-        ) {
-            guard let refreshID,
-                  refreshID != lastSessionRefreshID,
-                  running else {
-                return
-            }
-
-            lastSessionRefreshID = refreshID
-            runSession(
-                on: view,
-                resetTracking: false,
-                clearPointCloud: false
-            )
         }
 
         func setRGBDRecorder(_ recorder: RGBDRecorder?) {
