@@ -318,3 +318,5 @@
 "raw.timestamp" = "Timestamp";
 "raw.validDepth" = "Profundidad válida";
 "raw.exposure" = "Exposición";
+
+"raw.explanation" = "Son valores directos que ARKit usa antes de que LiDARForge los convierta en guías, métricas o modelos. Sirven para diagnóstico, calibración y desarrollo.";
