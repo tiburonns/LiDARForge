@@ -8,6 +8,7 @@ struct SensorToolView: View {
     var nightVision: Bool = false
 
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
 
     @StateObject private var controller = LiDARSessionController()
     @State private var isRunning = true
@@ -20,6 +21,7 @@ struct SensorToolView: View {
                 max(viewport.width - 32, 1),
                 560
             )
+            let topInset = geometry.safeAreaInsets.top
 
             ZStack {
                 ARScannerView(
@@ -42,10 +44,32 @@ struct SensorToolView: View {
                 height: viewport.height
             )
             .clipped()
+            .ignoresSafeArea()
             .overlay(alignment: .top) {
-                toolHeader
-                    .frame(width: hudWidth)
-                    .padding(.top, 8)
+                VStack(spacing: 14) {
+                    HStack {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.title2.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .frame(width: 52, height: 52)
+                                .background(
+                                    .ultraThinMaterial,
+                                    in: Circle()
+                                )
+                        }
+                        .buttonStyle(.plain)
+
+                        Spacer()
+                    }
+
+                    toolHeader
+                        .frame(width: hudWidth)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, topInset + 8)
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 10) {
@@ -61,12 +85,10 @@ struct SensorToolView: View {
                     controls
                         .frame(width: hudWidth)
                 }
-                .padding(.bottom, 8)
+                .padding(.bottom, max(geometry.safeAreaInsets.bottom, 8))
             }
         }
-        .ignoresSafeArea(edges: [.horizontal, .bottom])
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .onDisappear {
             isRunning = false
         }
