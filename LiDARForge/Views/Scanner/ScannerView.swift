@@ -44,181 +44,228 @@ struct ScannerView: View {
     }
 
     var body: some View {
+        scannerGeometry
+            .ignoresSafeArea(edges: [.horizontal, .bottom])
+            .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showOptions) {
+                optionsSheet
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+            .onAppear(perform: handleAppear)
+            .onChange(of: stage) { _, newStage in
+                handleStageChange(newStage)
+            }
+            .onChange(of: controller.targetLocked) { _, locked in
+                if locked {
+                    targetSelectionMode = false
+                }
+            }
+            .onChange(of: appState.enabledTools) { _, _ in
+                handleToolPreferenceChange()
+            }
+            .onChange(of: controller.worldMapData) { _, data in
+                saveWorldMapIfNeeded(data)
+            }
+            .task {
+                await restoreWorldMapIfNeeded()
+            }
+            .onDisappear(perform: handleDisappear)
+            .alert(
+                "LiDARForge",
+                isPresented: statusAlertBinding
+            ) {
+                Button("common.ok", role: .cancel) { }
+            } message: {
+                Text(statusMessage ?? "")
+            }
+    }
+
+    private var scannerGeometry: some View {
         GeometryReader { geometry in
-            let viewport = geometry.size
-            let hudWidth = min(
-                max(viewport.width - 32, 1),
-                560
-            )
+            scannerViewport(size: geometry.size)
+        }
+    }
 
-            ZStack {
-                ARScannerView(
-                    controller: controller,
-                    viewMode: viewMode,
-                    isRunning: isRunning,
-                    allowsTargetLock:
-                        projectType == .object &&
-                        targetSelectionMode,
-                    measurementMode: measurementMode,
-                    captureQuality: appState.captureQuality,
-                    rgbdRecorder: projectType == .video
-                        ? rgbdRecorder
-                        : (
-                            appState.isEnabled(.sourceArchive)
-                                ? sourceRecorder
-                                : nil
-                        ),
-                    initialWorldMapData: initialWorldMapData,
-                    showSurfaceHeatmap:
-                        appState.isEnabled(.coverageHeatmap) &&
-                        showSurfaceHeatmap,
-                    captureWorkspace: true,
-                    providesCameraPreview:
-                        stage != .structure &&
-                        viewMode == .camera
-                )
-                .frame(
-                    width: viewport.width,
-                    height: viewport.height
-                )
-                .clipped()
+    private func scannerViewport(size: CGSize) -> some View {
+        let hudWidth = min(
+            max(size.width - 32, 1),
+            560
+        )
 
-                sensorPreview(size: viewport)
+        return ZStack {
+            scannerARView(size: size)
+            sensorPreview(size: size)
 
-                if measurementMode || targetSelectionMode {
-                    interactionReticle
-                }
-            }
-            .frame(
-                width: viewport.width,
-                height: viewport.height
-            )
-            .clipped()
-            .overlay(alignment: .top) {
-                VStack(spacing: 10) {
-                    HStack {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .frame(width: 52, height: 52)
-                                .background(
-                                    .ultraThinMaterial,
-                                    in: Circle()
-                                )
-                        }
-                        .buttonStyle(.plain)
-
-                        Spacer()
-                    }
-
-                    compactProgressPanel
-                        .frame(width: hudWidth)
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-            }
-            .overlay(alignment: .bottom) {
-                optionsButton
-                    .frame(width: hudWidth)
-                    .padding(.bottom, 8)
+            if measurementMode || targetSelectionMode {
+                interactionReticle
             }
         }
-        .ignoresSafeArea(edges: [.horizontal, .bottom])
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showOptions) {
-            optionsSheet
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+        .frame(
+            width: size.width,
+            height: size.height
+        )
+        .clipped()
+        .overlay(alignment: .top) {
+            scannerTopHUD(width: hudWidth)
         }
-        .onAppear {
-            controller.configure(for: projectType)
-            controller.setStage(stage)
-            showSurfaceHeatmap = false
+        .overlay(alignment: .bottom) {
+            optionsButton
+                .frame(width: hudWidth)
+                .padding(.bottom, 8)
+        }
+    }
 
-            if let saved = existingProject?.measurements {
-                controller.restoreMeasurements(saved)
+    private func scannerARView(size: CGSize) -> some View {
+        ARScannerView(
+            controller: controller,
+            viewMode: viewMode,
+            isRunning: isRunning,
+            allowsTargetLock:
+                projectType == .object &&
+                targetSelectionMode,
+            measurementMode: measurementMode,
+            captureQuality: appState.captureQuality,
+            rgbdRecorder: activeRGBDRecorder,
+            initialWorldMapData: initialWorldMapData,
+            showSurfaceHeatmap:
+                appState.isEnabled(.coverageHeatmap) &&
+                showSurfaceHeatmap,
+            captureWorkspace: true,
+            providesCameraPreview:
+                stage != .structure &&
+                viewMode == .camera
+        )
+        .frame(
+            width: size.width,
+            height: size.height
+        )
+        .clipped()
+    }
+
+    private var activeRGBDRecorder: RGBDRecorder? {
+        if projectType == .video {
+            return rgbdRecorder
+        }
+
+        if appState.isEnabled(.sourceArchive) {
+            return sourceRecorder
+        }
+
+        return nil
+    }
+
+    private func scannerTopHUD(width: CGFloat) -> some View {
+        VStack(spacing: 10) {
+            HStack {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 52, height: 52)
+                        .background(
+                            .ultraThinMaterial,
+                            in: Circle()
+                        )
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
             }
 
-            if let savedCoverage = existingProject?.surfaceCoverage {
-                controller.restoreSurfaceCoverage(savedCoverage)
-            }
+            compactProgressPanel
+                .frame(width: width)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
 
-            if let savedTarget = existingProject?.target {
-                controller.restoreTarget(savedTarget)
+    private var statusAlertBinding: Binding<Bool> {
+        Binding(
+            get: { statusMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    statusMessage = nil
+                }
             }
+        )
+    }
 
+    private func handleAppear() {
+        controller.configure(for: projectType)
+        controller.setStage(stage)
+        showSurfaceHeatmap = false
+
+        if let saved = existingProject?.measurements {
+            controller.restoreMeasurements(saved)
+        }
+
+        if let savedCoverage = existingProject?.surfaceCoverage {
+            controller.restoreSurfaceCoverage(savedCoverage)
+        }
+
+        if let savedTarget = existingProject?.target {
+            controller.restoreTarget(savedTarget)
+        }
+
+        startSourceArchiveIfNeeded()
+    }
+
+    private func handleStageChange(_ newStage: CaptureStage) {
+        controller.setStage(newStage)
+        viewMode = .camera
+        showSurfaceHeatmap = false
+        measurementMode = false
+        targetSelectionMode = false
+    }
+
+    private func handleToolPreferenceChange() {
+        if appState.isEnabled(.sourceArchive) {
             startSourceArchiveIfNeeded()
+        } else if sourceRecorder.isRecording {
+            sourceRecorder.stop()
         }
-        .onChange(of: stage) { _, newStage in
-            controller.setStage(newStage)
 
-            viewMode = .camera
+        if !appState.isEnabled(.coverageHeatmap) {
             showSurfaceHeatmap = false
-            measurementMode = false
-            targetSelectionMode = false
         }
-        .onChange(of: controller.targetLocked) { _, locked in
-            if locked {
-                targetSelectionMode = false
-            }
+
+        if !availableViewModes.contains(viewMode) {
+            viewMode = .camera
         }
-        .onChange(of: appState.enabledTools) { _, _ in
-            if appState.isEnabled(.sourceArchive) {
-                startSourceArchiveIfNeeded()
-            } else if sourceRecorder.isRecording {
-                sourceRecorder.stop()
-            }
+    }
 
-            if !appState.isEnabled(.coverageHeatmap) {
-                showSurfaceHeatmap = false
-            }
+    private func saveWorldMapIfNeeded(_ data: Data?) {
+        guard let data else { return }
 
-            if !availableViewModes.contains(viewMode) {
-                viewMode = .camera
-            }
-        }
-        .onChange(of: controller.worldMapData) { _, data in
-            guard let data else { return }
-
-            Task {
-                _ = try? await ProjectStore.shared.saveWorldMap(
-                    data,
-                    projectID: projectID
-                )
-            }
-        }
-        .task {
-            guard let existingProject else { return }
-
-            initialWorldMapData = try? await ProjectStore.shared.loadWorldMap(
-                projectID: existingProject.id
+        Task {
+            _ = try? await ProjectStore.shared.saveWorldMap(
+                data,
+                projectID: projectID
             )
-            isRunning = true
         }
-        .onDisappear {
-            isRunning = false
+    }
 
-            if rgbdRecorder.isRecording {
-                rgbdRecorder.stop()
-            }
+    private func restoreWorldMapIfNeeded() async {
+        guard let existingProject else { return }
 
-            if sourceRecorder.isRecording {
-                sourceRecorder.stop()
-            }
+        initialWorldMapData = try? await ProjectStore.shared.loadWorldMap(
+            projectID: existingProject.id
+        )
+        isRunning = true
+    }
+
+    private func handleDisappear() {
+        isRunning = false
+
+        if rgbdRecorder.isRecording {
+            rgbdRecorder.stop()
         }
-        .alert(
-            "LiDARForge",
-            isPresented: Binding(
-                get: { statusMessage != nil },
-                set: { if !$0 { statusMessage = nil } }
-            )
-        ) {
-            Button("common.ok", role: .cancel) { }
-        } message: {
-            Text(statusMessage ?? "")
+
+        if sourceRecorder.isRecording {
+            sourceRecorder.stop()
         }
     }
 
