@@ -76,14 +76,21 @@ struct HomeView: View {
             }
 
             HStack(spacing: 8) {
-                Label(
-                    supportsLiDARDepth
-                        ? "home.lidar.ready"
-                        : "home.lidar.limited",
-                    systemImage: supportsLiDARDepth
-                        ? "sensor.tag.radiowaves.forward.fill"
-                        : "exclamationmark.triangle.fill"
-                )
+                Label {
+                    Text(
+                        LocalizedStringKey(
+                            supportsLiDARDepth
+                                ? "home.lidar.ready"
+                                : "home.lidar.limited"
+                        )
+                    )
+                } icon: {
+                    Image(
+                        systemName: supportsLiDARDepth
+                            ? "sensor.tag.radiowaves.forward.fill"
+                            : "exclamationmark.triangle.fill"
+                    )
+                }
                 .font(.caption.bold())
 
                 Spacer()
