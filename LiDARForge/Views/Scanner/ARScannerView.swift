@@ -381,7 +381,8 @@ struct ARScannerView: UIViewRepresentable {
             let needsDepth =
                 captureWorkspace ||
                 currentViewMode == .depth ||
-                currentViewMode == .confidence
+                currentViewMode == .confidence ||
+                currentViewMode == .raw
 
             if needsDepth {
                 if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
@@ -517,7 +518,7 @@ struct ARScannerView: UIViewRepresentable {
             if currentViewMode == .cameraPoints,
                Date().timeIntervalSince(lastFeaturePointRender) >= 0.28 {
                 lastFeaturePointRender = Date()
-                let sample = Array(points.prefix(110))
+                let sample = Array(points.prefix(80))
 
                 DispatchQueue.main.async { [weak self] in
                     guard let self,
