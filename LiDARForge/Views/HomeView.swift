@@ -72,7 +72,7 @@ struct HomeView: View {
                 Image(systemName: "viewfinder.circle.fill")
                     .font(.system(size: 52))
                     .symbolRenderingMode(.hierarchical)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(Color.accentColor)
             }
 
             HStack(spacing: 8) {
@@ -237,7 +237,7 @@ struct HomeView: View {
             Image(systemName: symbol)
                 .font(.title2)
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.tint)
+                .foregroundStyle(Color.accentColor)
 
             Text(title)
                 .font(.headline)
