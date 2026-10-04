@@ -274,99 +274,106 @@ struct ScannerView: View {
     }
 
     private var expandedProgressDetails: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Divider()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 10) {
+                Divider()
 
-            Text(LocalizedStringKey(stage.instructionKey))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text(LocalizedStringKey(stage.instructionKey))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            Label(
-                LocalizedStringKey(controller.captureGuidance.titleKey),
-                systemImage: controller.captureGuidance.symbol
-            )
-            .font(.caption.weight(.semibold))
+                Label(
+                    LocalizedStringKey(controller.captureGuidance.titleKey),
+                    systemImage: controller.captureGuidance.symbol
+                )
+                .font(.caption.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
 
-            if let recommendation = controller.missingViewpointRecommendation,
-               appState.isEnabled(.coverageHeatmap) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("viewpoint.title")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                if let recommendation = controller.missingViewpointRecommendation,
+                   appState.isEnabled(.coverageHeatmap) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("viewpoint.title")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
 
-                    Text(
-                        String(
-                            format: NSLocalizedString(
-                                recommendation.directionKey,
-                                comment: ""
-                            ),
-                            recommendation.azimuthDegrees
+                        Text(
+                            String(
+                                format: NSLocalizedString(
+                                    recommendation.directionKey,
+                                    comment: ""
+                                ),
+                                recommendation.azimuthDegrees
+                            )
                         )
-                    )
-                    .font(.caption.weight(.semibold))
+                        .font(.caption.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
 
-                    Text(LocalizedStringKey(recommendation.elevationKey))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        Text(LocalizedStringKey(recommendation.elevationKey))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                LazyVGrid(
+                    columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ],
+                    spacing: 8
+                ) {
+                    detailMetric(
+                        "metric.tracking",
+                        controller.trackingDescription
+                    )
+
+                    detailMetric(
+                        "metric.confidence",
+                        controller.confidence?.formatted(
+                            .percent.precision(.fractionLength(0))
+                        ) ?? "—"
+                    )
+
+                    detailMetric(
+                        "metric.distance",
+                        controller.centerDistanceMeters.map {
+                            $0.formatted(
+                                .number.precision(.fractionLength(2))
+                            ) + " m"
+                        } ?? "—"
+                    )
+
+                    detailMetric(
+                        "coverage.surface",
+                        controller.surfaceCoverageCells.isEmpty
+                            ? "—"
+                            : controller.surfaceCoverageScore.formatted(
+                                .percent.precision(.fractionLength(0))
+                            )
+                    )
+                }
+
+                if sourceRecorder.isRecording {
+                    Label(
+                        "source.active",
+                        systemImage: "archivebox.fill"
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                }
+
+                if measurementMode {
+                    Label(
+                        "measure.active",
+                        systemImage: "ruler"
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 }
             }
-
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ],
-                spacing: 8
-            ) {
-                detailMetric(
-                    "metric.tracking",
-                    controller.trackingDescription
-                )
-
-                detailMetric(
-                    "metric.confidence",
-                    controller.confidence?.formatted(
-                        .percent.precision(.fractionLength(0))
-                    ) ?? "—"
-                )
-
-                detailMetric(
-                    "metric.distance",
-                    controller.centerDistanceMeters.map {
-                        $0.formatted(
-                            .number.precision(.fractionLength(2))
-                        ) + " m"
-                    } ?? "—"
-                )
-
-                detailMetric(
-                    "coverage.surface",
-                    controller.surfaceCoverageCells.isEmpty
-                        ? "—"
-                        : controller.surfaceCoverageScore.formatted(
-                            .percent.precision(.fractionLength(0))
-                        )
-                )
-            }
-
-            if sourceRecorder.isRecording {
-                Label(
-                    "source.active",
-                    systemImage: "archivebox.fill"
-                )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            }
-
-            if measurementMode {
-                Label(
-                    "measure.active",
-                    systemImage: "ruler"
-                )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            }
         }
+        .frame(maxHeight: 255)
     }
 
     private func detailMetric(
