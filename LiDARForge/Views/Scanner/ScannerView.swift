@@ -422,12 +422,21 @@ struct ScannerView: View {
                     Button {
                         isRunning.toggle()
                     } label: {
-                        Label(
-                            isRunning ? "scan.pause" : "scan.resume",
-                            systemImage: isRunning
-                                ? "pause.fill"
-                                : "play.fill"
-                        )
+                        Label {
+                            Text(
+                                LocalizedStringKey(
+                                    isRunning
+                                        ? "scan.pause"
+                                        : "scan.resume"
+                                )
+                            )
+                        } icon: {
+                            Image(
+                                systemName: isRunning
+                                    ? "pause.fill"
+                                    : "play.fill"
+                            )
+                        }
                     }
 
                     stageAction
