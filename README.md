@@ -63,6 +63,11 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Per-project RGB/depth/confidence/pose/intrinsics/timestamp/IMU source archives for later reprocessing
 - Missing-viewpoint coach derived from directional and mesh-surface coverage
 - Project detail screen with workflow progress and continuation
+- Visual card-based home and Sensor Tools workspace
+- Minimal scanner HUD: expandable progress/status panel plus one project-aware Options sheet
+- Dedicated Sensor Tool screens with fixed purpose instead of a misleading in-tool mode picker
+- Confidence visualization optimized to avoid simultaneous dense point-cloud and mesh sampling
+- Lightweight world-space coverage-gap overlay instead of the previous dense sphere heatmap
 - Pause/resume and interruption recovery without intentionally discarding the current scan
 - Sensor tools screen
 - CI build workflow
