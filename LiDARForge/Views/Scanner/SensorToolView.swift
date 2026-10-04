@@ -15,6 +15,12 @@ struct SensorToolView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let viewport = geometry.size
+            let hudWidth = min(
+                max(viewport.width - 32, 1),
+                560
+            )
+
             ZStack {
                 ARScannerView(
                     controller: controller,
@@ -23,34 +29,29 @@ struct SensorToolView: View {
                     captureQuality: appState.captureQuality,
                     captureWorkspace: false
                 )
-                .ignoresSafeArea()
+                .frame(
+                    width: viewport.width,
+                    height: viewport.height
+                )
+                .clipped()
 
-                previewOverlay
+                previewOverlay(size: viewport)
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                HStack {
-                    toolHeader
-                        .frame(
-                            maxWidth: min(
-                                max(geometry.size.width - 24, 280),
-                                560
-                            )
-                        )
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
+            .frame(
+                width: viewport.width,
+                height: viewport.height
+            )
+            .clipped()
+            .overlay(alignment: .top) {
+                toolHeader
+                    .frame(width: hudWidth)
+                    .padding(.top, 8)
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
+            .overlay(alignment: .bottom) {
                 VStack(spacing: 10) {
                     if showDetails {
                         detailsCard
-                            .frame(
-                                maxWidth: min(
-                                    max(geometry.size.width - 24, 280),
-                                    560
-                                )
-                            )
+                            .frame(width: hudWidth)
                             .transition(
                                 .move(edge: .bottom)
                                 .combined(with: .opacity)
@@ -58,18 +59,12 @@ struct SensorToolView: View {
                     }
 
                     controls
-                        .frame(
-                            maxWidth: min(
-                                max(geometry.size.width - 24, 280),
-                                560
-                            )
-                        )
+                        .frame(width: hudWidth)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 6)
+                .padding(.bottom, 8)
             }
         }
+        .ignoresSafeArea(edges: [.horizontal, .bottom])
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {
@@ -78,13 +73,17 @@ struct SensorToolView: View {
     }
 
     @ViewBuilder
-    private var previewOverlay: some View {
+    private func previewOverlay(size: CGSize) -> some View {
         if mode == .depth,
            let image = controller.depthPreview {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .ignoresSafeArea()
+                .frame(
+                    width: size.width,
+                    height: size.height
+                )
+                .clipped()
                 .background(.black)
                 .colorMultiply(nightVision ? .green : .white)
                 .allowsHitTesting(false)
@@ -93,7 +92,11 @@ struct SensorToolView: View {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .ignoresSafeArea()
+                .frame(
+                    width: size.width,
+                    height: size.height
+                )
+                .clipped()
                 .background(.black)
                 .allowsHitTesting(false)
         }
