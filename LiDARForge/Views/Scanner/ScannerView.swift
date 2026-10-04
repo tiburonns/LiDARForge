@@ -45,6 +45,12 @@ struct ScannerView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let viewport = geometry.size
+            let hudWidth = min(
+                max(viewport.width - 32, 1),
+                560
+            )
+
             ZStack {
                 ARScannerView(
                     controller: controller,
@@ -68,43 +74,35 @@ struct ScannerView: View {
                         showSurfaceHeatmap,
                     captureWorkspace: true
                 )
-                .ignoresSafeArea()
+                .frame(
+                    width: viewport.width,
+                    height: viewport.height
+                )
+                .clipped()
 
-                sensorPreview
+                sensorPreview(size: viewport)
 
                 if measurementMode || targetSelectionMode {
                     interactionReticle
                 }
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                HStack {
-                    compactProgressPanel
-                        .frame(
-                            maxWidth: min(
-                                max(geometry.size.width - 24, 280),
-                                560
-                            )
-                        )
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
+            .frame(
+                width: viewport.width,
+                height: viewport.height
+            )
+            .clipped()
+            .overlay(alignment: .top) {
+                compactProgressPanel
+                    .frame(width: hudWidth)
+                    .padding(.top, 8)
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                HStack {
-                    optionsButton
-                        .frame(
-                            maxWidth: min(
-                                max(geometry.size.width - 24, 280),
-                                560
-                            )
-                        )
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 6)
+            .overlay(alignment: .bottom) {
+                optionsButton
+                    .frame(width: hudWidth)
+                    .padding(.bottom, 8)
             }
         }
+        .ignoresSafeArea(edges: [.horizontal, .bottom])
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showOptions) {
             optionsSheet
@@ -133,9 +131,6 @@ struct ScannerView: View {
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
 
-            // Changing Structure → Detail → Appearance must not restart ARKit.
-            // Return to the normal camera presentation while preserving
-            // the same ARSession, world tracking, anchors, and camera feed.
             viewMode = .camera
             showSurfaceHeatmap = false
             measurementMode = false
@@ -204,21 +199,31 @@ struct ScannerView: View {
     }
 
     @ViewBuilder
-    private var sensorPreview: some View {
+    private func sensorPreview(size: CGSize) -> some View {
         if viewMode == .depth,
            let image = controller.depthPreview {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .ignoresSafeArea()
+                .frame(
+                    width: size.width,
+                    height: size.height
+                )
+                .clipped()
                 .background(.black)
+                .allowsHitTesting(false)
         } else if viewMode == .confidence,
                   let image = controller.confidencePreview {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFill()
-                .ignoresSafeArea()
+                .frame(
+                    width: size.width,
+                    height: size.height
+                )
+                .clipped()
                 .background(.black)
+                .allowsHitTesting(false)
         }
     }
 
