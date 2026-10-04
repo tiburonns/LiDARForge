@@ -21,8 +21,14 @@ struct ARScannerView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> ARView {
-        let view = ARView(frame: .zero)
-        view.automaticallyConfigureSession = false
+        let view = ARView(
+            frame: .zero,
+            cameraMode: .ar,
+            automaticallyConfigureSession: false
+        )
+        view.environment.background = .cameraFeed(
+            exposureCompensation: 0
+        )
         context.coordinator.attach(to: view)
         context.coordinator.setAllowsTargetLock(allowsTargetLock)
         context.coordinator.setMeasurementMode(measurementMode)
@@ -379,6 +385,16 @@ struct ARScannerView: UIViewRepresentable {
 
         func setViewMode(_ mode: SensorViewMode, on view: ARView) {
             currentViewMode = mode
+
+            // Always keep RealityKit's physical camera feed as the scene
+            // background. Depth/Confidence are SwiftUI overlays above it.
+            // This prevents a running ARSession from rendering as a black
+            // scene after capture-stage/UI transitions.
+            view.cameraMode = .ar
+            view.environment.background = .cameraFeed(
+                exposureCompensation: 0
+            )
+
             var options: ARView.DebugOptions = []
 
             switch mode {
@@ -671,6 +687,12 @@ struct ARScannerView: UIViewRepresentable {
             }
 
             guard running, let arView else { return }
+
+            arView.cameraMode = .ar
+            arView.environment.background = .cameraFeed(
+                exposureCompensation: 0
+            )
+
             runSession(
                 on: arView,
                 resetTracking: false,
