@@ -134,3 +134,18 @@ Acceptance:
 - Confidence must not freeze navigation or the Options sheet.
 - Switching into/out of Confidence must not reset the AR session.
 - No simultaneous depth-preview generation should occur while only Confidence is visible.
+
+
+## 10. Feature Points and Raw Inspector
+
+1. Open Feature Points and confirm tracking points render as small cyan round markers rather than yellow square debug markers.
+2. Move around textured and textureless surfaces and confirm point density changes without obvious UI stutter.
+3. Open Raw Sensor Data and expand Details.
+4. Confirm XYZ position, yaw/pitch, timestamp, tracking, feature count, mesh count, valid depth, confidence, and exposure update while the camera remains live.
+5. Switch capture stage from Structure to Detail and verify the live camera resumes immediately without resetting tracking.
+6. Present and dismiss Options while capture is running and confirm the camera feed remains live.
+
+Acceptance:
+- No black camera after advancing to Detail.
+- Details expansion must not pause the AR session.
+- Feature-point visualization should remain readable and lighter than ARKit debug squares.
