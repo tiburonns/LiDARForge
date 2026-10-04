@@ -1,96 +1,84 @@
 name: iOS Build
 
-permissions:
-  contents: write
-  statuses: write
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lidarforge-ios-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-latest
+    timeout-minutes: 35
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer || true
-
-      - name: Build
-        shell: bash
+      - name: Xcode version
         run: |
-          set +e
+          xcodebuild -version
+          swift --version
+
+      - name: Validate release resources
+        run: |
+          plutil -lint LiDARForge/Info.plist
+          plutil -lint LiDARForge/PrivacyInfo.xcprivacy
+          plutil -lint LiDARForge/Resources/en.lproj/InfoPlist.strings
+          plutil -lint LiDARForge/Resources/es.lproj/InfoPlist.strings
+          python3 Tests/validate-release-contract.py
+
+      - name: Build Release for iOS Simulator
+        run: |
+          set -o pipefail
           xcodebuild \
             -project LiDARForge.xcodeproj \
             -scheme LiDARForge \
-            -sdk iphonesimulator \
-            -configuration Debug \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO \
-            build 2>&1 | tee build.log
-          status=${PIPESTATUS[0]}
-          echo "$status" > .build_status
-          exit 0
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            build | tee build-simulator.log
 
-      - name: Publish build diagnostics
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
+      - name: Build Release for iPhoneOS
         run: |
-          status=$(cat .build_status 2>/dev/null || echo 1)
-          if [ "$status" != "0" ]; then
-            diagnostic=$(grep -E "error:|warning:" build.log | tail -n 40 || true)
-            body=$(printf '### Xcode diagnostics\n```text\n%s\n```' "$diagnostic")
-            gh api --method POST \
-              "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" \
-              -f body="$body" || true
-          fi
-
-      - name: Static Analyze
-        shell: bash
-        run: |
-          status=$(cat .build_status 2>/dev/null || echo 1)
-          if [ "$status" != "0" ]; then
-            echo "Skipping analyze because build failed."
-            echo "1" > .analyze_status
-            exit 0
-          fi
-
-          set +e
+          set -o pipefail
           xcodebuild \
             -project LiDARForge.xcodeproj \
             -scheme LiDARForge \
-            -sdk iphonesimulator \
-            -configuration Debug \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
-            analyze 2>&1 | tee analyze.log
-          analyze_status=${PIPESTATUS[0]}
-          echo "$analyze_status" > .analyze_status
-          exit 0
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=YES \
+            build | tee build-iphoneos.log
+
+      - name: Static Analyze Release
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project LiDARForge.xcodeproj \
+            -scheme LiDARForge \
+            -configuration Release \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            analyze | tee analyze.log
 
       - name: Upload Xcode diagnostics
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: xcode-diagnostics-${{ github.run_id }}
+          name: lidarforge-xcode-${{ github.run_id }}
           path: |
-            build.log
+            build-simulator.log
+            build-iphoneos.log
             analyze.log
-            .build_status
-            .analyze_status
           if-no-files-found: ignore
-          retention-days: 3
-
-      - name: Enforce result
-        if: always()
-        shell: bash
-        run: |
-          build_status=$(cat .build_status 2>/dev/null || echo 1)
-          analyze_status=$(cat .analyze_status 2>/dev/null || echo 0)
-          if [ "$build_status" != "0" ] || [ "$analyze_status" != "0" ]; then
-            exit 1
-          fi
+          retention-days: 7

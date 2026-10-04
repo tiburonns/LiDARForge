@@ -106,3 +106,8 @@ La arquitectura es **local-first**. Los frames del sensor y los proyectos perman
 ## Licencia
 
 MIT — consulta [LICENSE](LICENSE).
+
+
+## TestFlight
+
+Antes de una subida, ejecuta el [preflight de TestFlight](docs/TESTFLIGHT.md) y el plan de pruebas físicas en dispositivo LiDAR.

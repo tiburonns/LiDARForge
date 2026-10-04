@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "LiDARForge";
+"NSCameraUsageDescription" = "LiDARForge usa la cámara y el sensor LiDAR para capturar geometría espacial, profundidad y texturas.";
+"NSMotionUsageDescription" = "LiDARForge registra datos de movimiento junto con las capturas espaciales para mejorar la alineación y permitir reprocesamiento posterior.";

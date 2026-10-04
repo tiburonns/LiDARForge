@@ -45,7 +45,12 @@ struct SettingsView: View {
             }
 
             Section("settings.about") {
-                LabeledContent("settings.version", value: "0.2.0")
+                LabeledContent(
+                    "settings.version",
+                    value: Bundle.main.object(
+                        forInfoDictionaryKey: "CFBundleShortVersionString"
+                    ) as? String ?? "—"
+                )
                 LabeledContent(
                     "settings.processing",
                     value: String(localized: "settings.localFirst")
