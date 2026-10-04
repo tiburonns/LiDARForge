@@ -14,6 +14,7 @@ struct ARScannerView: UIViewRepresentable {
     var rgbdRecorder: RGBDRecorder?
     var initialWorldMapData: Data?
     var showSurfaceHeatmap: Bool = false
+    var captureWorkspace: Bool = true
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -28,6 +29,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setRGBDRecorder(rgbdRecorder)
         context.coordinator.setInitialWorldMapData(initialWorldMapData)
+        context.coordinator.setCaptureWorkspace(captureWorkspace)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
         context.coordinator.setSurfaceHeatmap(
@@ -44,6 +46,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setCaptureQuality(captureQuality)
         context.coordinator.setRGBDRecorder(rgbdRecorder)
         context.coordinator.setInitialWorldMapData(initialWorldMapData)
+        context.coordinator.setCaptureWorkspace(captureWorkspace)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
         context.coordinator.setSurfaceHeatmap(
@@ -78,6 +81,8 @@ struct ARScannerView: UIViewRepresentable {
         private var measurementMode = false
         private var captureQuality: CaptureQualityMode = .balanced
         private weak var rgbdRecorder: RGBDRecorder?
+        private var captureWorkspace = true
+        private var currentViewMode: SensorViewMode = .camera
         private var initialWorldMapData: Data?
         private var lastWorldMapSaveRequestID: UUID?
         private var heatmapAnchor: AnchorEntity?
@@ -115,6 +120,10 @@ struct ARScannerView: UIViewRepresentable {
             captureQuality = quality
         }
 
+        func setCaptureWorkspace(_ enabled: Bool) {
+            captureWorkspace = enabled
+        }
+
         func setRGBDRecorder(_ recorder: RGBDRecorder?) {
             rgbdRecorder = recorder
         }
@@ -134,32 +143,50 @@ struct ARScannerView: UIViewRepresentable {
                 return
             }
 
-            guard Date().timeIntervalSince(lastHeatmapRender) >= 0.65 else {
+            guard Date().timeIntervalSince(lastHeatmapRender) >= 1.10 else {
                 return
             }
 
             lastHeatmapRender = Date()
             removeSurfaceHeatmap()
 
-            guard !cells.isEmpty else { return }
-
-            let anchor = AnchorEntity(world: .zero)
-            let mesh = MeshResource.generateSphere(radius: 0.018)
-
-            for cell in cells.prefix(320) {
-                let uiColor: UIColor
-                if cell.coverage >= 0.66 {
-                    uiColor = UIColor.systemGreen.withAlphaComponent(0.62)
-                } else if cell.coverage >= 0.25 {
-                    uiColor = UIColor.systemYellow.withAlphaComponent(0.72)
-                } else {
-                    uiColor = UIColor.systemRed.withAlphaComponent(0.78)
+            let gaps = cells
+                .filter { $0.coverage < 0.82 }
+                .sorted { lhs, rhs in
+                    if lhs.coverage == rhs.coverage {
+                        return lhs.confidence < rhs.confidence
+                    }
+                    return lhs.coverage < rhs.coverage
                 }
 
-                let material = SimpleMaterial(
-                    color: uiColor,
-                    isMetallic: false
-                )
+            guard !gaps.isEmpty else { return }
+
+            let anchor = AnchorEntity(world: .zero)
+            let mesh = MeshResource.generateSphere(radius: 0.007)
+
+            let missingMaterial = SimpleMaterial(
+                color: UIColor.systemRed.withAlphaComponent(0.78),
+                isMetallic: false
+            )
+            let weakMaterial = SimpleMaterial(
+                color: UIColor.systemOrange.withAlphaComponent(0.68),
+                isMetallic: false
+            )
+            let partialMaterial = SimpleMaterial(
+                color: UIColor.systemYellow.withAlphaComponent(0.52),
+                isMetallic: false
+            )
+
+            for cell in gaps.prefix(120) {
+                let material: SimpleMaterial
+                if cell.coverage < 0.20 {
+                    material = missingMaterial
+                } else if cell.coverage < 0.50 {
+                    material = weakMaterial
+                } else {
+                    material = partialMaterial
+                }
+
                 let entity = ModelEntity(
                     mesh: mesh,
                     materials: [material]
@@ -307,18 +334,30 @@ struct ARScannerView: UIViewRepresentable {
             configuration.planeDetection = [.horizontal, .vertical]
             configuration.environmentTexturing = .automatic
 
-            if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
-                configuration.sceneReconstruction = .meshWithClassification
-            } else if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
-                configuration.sceneReconstruction = .mesh
+            let needsMesh =
+                captureWorkspace ||
+                currentViewMode == .mesh ||
+                currentViewMode == .raw
+
+            if needsMesh {
+                if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
+                    configuration.sceneReconstruction = .meshWithClassification
+                } else if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+                    configuration.sceneReconstruction = .mesh
+                }
             }
 
-            if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
-                configuration.frameSemantics.insert(.sceneDepth)
-            }
+            let needsDepth =
+                captureWorkspace ||
+                currentViewMode == .depth ||
+                currentViewMode == .confidence
 
-            if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
-                configuration.frameSemantics.insert(.smoothedSceneDepth)
+            if needsDepth {
+                if ARWorldTrackingConfiguration.supportsFrameSemantics(.smoothedSceneDepth) {
+                    configuration.frameSemantics.insert(.smoothedSceneDepth)
+                } else if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
+                    configuration.frameSemantics.insert(.sceneDepth)
+                }
             }
 
             let options: ARSession.RunOptions = resetTracking
@@ -335,6 +374,7 @@ struct ARScannerView: UIViewRepresentable {
         }
 
         func setViewMode(_ mode: SensorViewMode, on view: ARView) {
+            currentViewMode = mode
             var options: ARView.DebugOptions = []
 
             switch mode {
@@ -392,15 +432,35 @@ struct ARScannerView: UIViewRepresentable {
             var depthPreview: UIImage?
             var confidencePreview: UIImage?
 
-            if frame.timestamp - lastPreviewTimestamp >= captureQuality.previewInterval,
+            let previewInterval: TimeInterval
+            switch currentViewMode {
+            case .confidence:
+                previewInterval = max(
+                    0.28,
+                    captureQuality.previewInterval * 1.8
+                )
+            case .depth:
+                previewInterval = max(
+                    0.18,
+                    captureQuality.previewInterval
+                )
+            default:
+                previewInterval = .infinity
+            }
+
+            if frame.timestamp - lastPreviewTimestamp >= previewInterval,
                let depth {
                 lastPreviewTimestamp = frame.timestamp
-                depthPreview = LiDARFrameProcessor.depthImage(
-                    from: depth.depthMap
-                )
-                confidencePreview = LiDARFrameProcessor.confidenceImage(
-                    from: depth.confidenceMap
-                )
+
+                if currentViewMode == .depth {
+                    depthPreview = LiDARFrameProcessor.depthImage(
+                        from: depth.depthMap
+                    )
+                } else if currentViewMode == .confidence {
+                    confidencePreview = LiDARFrameProcessor.confidenceImage(
+                        from: depth.confidenceMap
+                    )
+                }
             }
 
             let transform = frame.camera.transform
@@ -421,8 +481,13 @@ struct ARScannerView: UIViewRepresentable {
             } ?? []
 
             var densePoints: [SIMD3<Float>] = []
+            let denseInterval = currentViewMode == .confidence
+                ? max(0.90, captureQuality.denseSampleInterval)
+                : captureQuality.denseSampleInterval
+
             if trackingNormal,
-               frame.timestamp - lastPointCloudTimestamp >= captureQuality.denseSampleInterval,
+               captureWorkspace,
+               frame.timestamp - lastPointCloudTimestamp >= denseInterval,
                let depth {
                 lastPointCloudTimestamp = frame.timestamp
                 densePoints = DepthPointCloudBuilder.worldPoints(
@@ -437,7 +502,8 @@ struct ARScannerView: UIViewRepresentable {
 
             var meshSurfacePoints: [SIMD3<Float>] = []
             if trackingNormal,
-               frame.timestamp - lastMeshSurfaceTimestamp >= 0.75 {
+               captureWorkspace,
+               frame.timestamp - lastMeshSurfaceTimestamp >= 0.95 {
                 lastMeshSurfaceTimestamp = frame.timestamp
                 meshSurfacePoints = sampledMeshSurfacePoints(
                     from: frame,
