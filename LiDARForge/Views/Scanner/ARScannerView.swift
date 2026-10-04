@@ -15,6 +15,7 @@ struct ARScannerView: UIViewRepresentable {
     var initialWorldMapData: Data?
     var showSurfaceHeatmap: Bool = false
     var captureWorkspace: Bool = true
+    var sessionRefreshID: UUID?
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -32,6 +33,10 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setCaptureWorkspace(captureWorkspace)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
+        context.coordinator.handleSessionRefresh(
+            sessionRefreshID,
+            on: view
+        )
         context.coordinator.setSurfaceHeatmap(
             showSurfaceHeatmap,
             cells: controller.surfaceCoverageCells,
@@ -49,6 +54,10 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setCaptureWorkspace(captureWorkspace)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
+        context.coordinator.handleSessionRefresh(
+            sessionRefreshID,
+            on: uiView
+        )
         context.coordinator.setSurfaceHeatmap(
             showSurfaceHeatmap,
             cells: controller.surfaceCoverageCells,
@@ -62,6 +71,7 @@ struct ARScannerView: UIViewRepresentable {
 
     static func dismantleUIView(_ uiView: ARView, coordinator: Coordinator) {
         coordinator.removeSurfaceHeatmap()
+        coordinator.removeFeaturePointVisualization()
         uiView.session.pause()
         uiView.session.delegate = nil
     }
@@ -77,6 +87,7 @@ struct ARScannerView: UIViewRepresentable {
         private var lastMeshSurfaceTimestamp: TimeInterval = 0
         private var lastRGBDTimestamp: TimeInterval = 0
         private var lastHeatmapRender = Date.distantPast
+        private var lastFeaturePointRender = Date.distantPast
         private var allowsTargetLock = false
         private var measurementMode = false
         private var captureQuality: CaptureQualityMode = .balanced
@@ -85,7 +96,9 @@ struct ARScannerView: UIViewRepresentable {
         private var currentViewMode: SensorViewMode = .camera
         private var initialWorldMapData: Data?
         private var lastWorldMapSaveRequestID: UUID?
+        private var lastSessionRefreshID: UUID?
         private var heatmapAnchor: AnchorEntity?
+        private var featurePointAnchor: AnchorEntity?
 
         init(controller: LiDARSessionController) {
             self.controller = controller
@@ -122,6 +135,24 @@ struct ARScannerView: UIViewRepresentable {
 
         func setCaptureWorkspace(_ enabled: Bool) {
             captureWorkspace = enabled
+        }
+
+        func handleSessionRefresh(
+            _ refreshID: UUID?,
+            on view: ARView
+        ) {
+            guard let refreshID,
+                  refreshID != lastSessionRefreshID,
+                  running else {
+                return
+            }
+
+            lastSessionRefreshID = refreshID
+            runSession(
+                on: view,
+                resetTracking: false,
+                clearPointCloud: false
+            )
         }
 
         func setRGBDRecorder(_ recorder: RGBDRecorder?) {
@@ -381,14 +412,17 @@ struct ARScannerView: UIViewRepresentable {
             case .camera:
                 break
             case .cameraPoints:
-                options.insert(.showFeaturePoints)
+                break
             case .mesh:
                 options.insert(.showSceneUnderstanding)
             case .depth, .confidence:
                 break
             case .raw:
                 options.insert(.showWorldOrigin)
-                options.insert(.showFeaturePoints)
+            }
+
+            if mode != .cameraPoints {
+                removeFeaturePointVisualization()
             }
 
             view.debugOptions = options
@@ -479,6 +513,24 @@ struct ARScannerView: UIViewRepresentable {
             let points = frame.rawFeaturePoints.map {
                 Array($0.points)
             } ?? []
+
+            if currentViewMode == .cameraPoints,
+               Date().timeIntervalSince(lastFeaturePointRender) >= 0.28 {
+                lastFeaturePointRender = Date()
+                let sample = Array(points.prefix(110))
+
+                DispatchQueue.main.async { [weak self] in
+                    guard let self,
+                          let view = self.arView else {
+                        return
+                    }
+
+                    self.renderFeaturePoints(
+                        sample,
+                        on: view
+                    )
+                }
+            }
 
             var densePoints: [SIMD3<Float>] = []
             let denseInterval = currentViewMode == .confidence
@@ -599,6 +651,39 @@ struct ARScannerView: UIViewRepresentable {
             }
 
             return result
+        }
+
+        private func renderFeaturePoints(
+            _ points: [SIMD3<Float>],
+            on view: ARView
+        ) {
+            removeFeaturePointVisualization()
+
+            guard !points.isEmpty else { return }
+
+            let anchor = AnchorEntity(world: .zero)
+            let mesh = MeshResource.generateSphere(radius: 0.0045)
+            let material = SimpleMaterial(
+                color: UIColor.systemCyan.withAlphaComponent(0.90),
+                isMetallic: false
+            )
+
+            for point in points {
+                let entity = ModelEntity(
+                    mesh: mesh,
+                    materials: [material]
+                )
+                entity.position = point
+                anchor.addChild(entity)
+            }
+
+            view.scene.addAnchor(anchor)
+            featurePointAnchor = anchor
+        }
+
+        private func removeFeaturePointVisualization() {
+            featurePointAnchor?.removeFromParent()
+            featurePointAnchor = nil
         }
 
         func sessionWasInterrupted(_ session: ARSession) {
