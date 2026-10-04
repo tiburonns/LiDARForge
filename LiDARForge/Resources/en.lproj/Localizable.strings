@@ -284,3 +284,31 @@
 
 "import.success" = "LiDARForge project imported. It is now available in Projects.";
 "import.failed" = "The LiDARForge project could not be imported: %@";
+
+"home.hero.title" = "Spatial capture, without the clutter";
+"home.hero.subtitle" = "Choose the right project, scan with guidance, and keep every useful sensor layer available when you need it.";
+"home.lidar.ready" = "LiDAR ready";
+"home.lidar.limited" = "Limited sensor support";
+"home.localFirst" = "On-device workspace";
+"home.quickCapture" = "Quick Capture";
+"home.quickCapture.subtitle" = "Jump directly into the capture engine that matches the subject.";
+"home.workspace" = "Workspace";
+"home.workspace.subtitle" = "Projects, instruments, and configuration in one place.";
+"home.newProject.subtitle" = "Choose a guided project workflow.";
+"home.projects.subtitle" = "Resume, inspect, export, or share captures.";
+"home.tools.subtitle" = "Open a dedicated live sensor instrument.";
+"home.settings.subtitle" = "Quality, language, and tool layout.";
+
+"tools.hero.title" = "Live Sensor Instruments";
+"tools.hero.subtitle" = "Each tool now opens as a focused instrument. There is no extra mode switch hiding the tool you selected.";
+"tools.showDetails" = "Details";
+"tools.hideDetails" = "Hide details";
+"tools.live" = "Live";
+"tools.paused" = "Paused";
+"tools.depthResolution" = "Depth resolution";
+
+"scan.options" = "Options";
+"scan.session" = "Capture";
+"scan.projectTools" = "Project Tools";
+"measure.active" = "Measurement mode active";
+"target.reselect" = "Select Target Again";
