@@ -44,30 +44,26 @@ struct SensorToolView: View {
             .clipped()
             .ignoresSafeArea()
             .overlay(alignment: .top) {
-                VStack(spacing: 14) {
-                    HStack {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "chevron.left")
-                                .font(.title2.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .frame(width: 52, height: 52)
-                                .background(
-                                    .ultraThinMaterial,
-                                    in: Circle()
-                                )
-                        }
-                        .buttonStyle(.plain)
-
-                        Spacer()
+                HStack(spacing: 10) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 48, height: 48)
+                            .background(
+                                .ultraThinMaterial,
+                                in: Circle()
+                            )
                     }
+                    .buttonStyle(.plain)
 
                     toolHeader
-                        .frame(width: hudWidth)
+                        .frame(maxWidth: hudWidth)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 6)
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 10) {
