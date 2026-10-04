@@ -134,6 +134,14 @@ struct ScannerView: View {
         }
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
+            sessionRefreshID = UUID()
+        }
+        .onChange(of: showOptions) { wasPresented, isPresented in
+            if wasPresented,
+               !isPresented,
+               isRunning {
+                sessionRefreshID = UUID()
+            }
         }
         .onChange(of: controller.targetLocked) { _, locked in
             if locked {
