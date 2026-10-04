@@ -682,7 +682,7 @@ struct ARScannerView: UIViewRepresentable {
             featurePointAnchor = anchor
         }
 
-        private func removeFeaturePointVisualization() {
+        func removeFeaturePointVisualization() {
             featurePointAnchor?.removeFromParent()
             featurePointAnchor = nil
         }
