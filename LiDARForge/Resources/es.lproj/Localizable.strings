@@ -29,7 +29,7 @@
 "sensor.mesh" = "Malla";
 "sensor.depth" = "Profundidad";
 "sensor.confidence" = "Confianza";
-"sensor.raw" = "Crudo";
+"sensor.raw" = "Inspector";
 "sensor.mode" = "Vista del sensor";
 
 "tool.nightVision" = "Visión nocturna LiDAR";
@@ -37,7 +37,7 @@
 "tool.confidence" = "Mapa de confianza";
 "tool.points" = "Puntos de características";
 "tool.mesh" = "Malla LiDAR";
-"tool.raw" = "Datos crudos del sensor";
+"tool.raw" = "Inspector del sensor";
 
 "metric.coverage" = "Cobertura";
 "metric.confidence" = "Confianza";
@@ -255,7 +255,7 @@
 "customize.confidence.subtitle" = "Inspecciona la confianza LiDAR por píxel.";
 "customize.points.subtitle" = "Muestra puntos de características usados por AR.";
 "customize.mesh.subtitle" = "Muestra la geometría reconstruida de la escena.";
-"customize.raw.subtitle" = "Muestra telemetría directa de ARKit: pose, orientación, tracking, profundidad, confianza y exposición.";
+"customize.raw.subtitle" = "Inspecciona en tiempo real la telemetría de ARKit: pose, orientación, tracking, profundidad, confianza y exposición.";
 
 "coverage.surface" = "Cobertura de superficie 3D";
 "coverage.show3d" = "Mostrar zonas faltantes";
@@ -319,4 +319,4 @@
 "raw.validDepth" = "Profundidad válida";
 "raw.exposure" = "Exposición";
 
-"raw.explanation" = "Son valores directos que ARKit usa antes de que LiDARForge los convierta en guías, métricas o modelos. Sirven para diagnóstico, calibración y desarrollo.";
+"raw.explanation" = "Inspector técnico de ARKit. Muestra los valores que LiDARForge recibe antes de convertirlos en guías, métricas o modelos. Úsalo para diagnóstico, calibración y desarrollo.";
