@@ -15,6 +15,7 @@ struct ARScannerView: UIViewRepresentable {
     var initialWorldMapData: Data?
     var showSurfaceHeatmap: Bool = false
     var captureWorkspace: Bool = true
+    var providesCameraPreview: Bool = false
 
     func makeCoordinator() -> Coordinator {
         Coordinator(controller: controller)
@@ -36,6 +37,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setRGBDRecorder(rgbdRecorder)
         context.coordinator.setInitialWorldMapData(initialWorldMapData)
         context.coordinator.setCaptureWorkspace(captureWorkspace)
+        context.coordinator.setProvidesCameraPreview(providesCameraPreview)
         context.coordinator.setViewMode(viewMode, on: view)
         context.coordinator.setRunning(isRunning, on: view)
         context.coordinator.setSurfaceHeatmap(
@@ -53,6 +55,7 @@ struct ARScannerView: UIViewRepresentable {
         context.coordinator.setRGBDRecorder(rgbdRecorder)
         context.coordinator.setInitialWorldMapData(initialWorldMapData)
         context.coordinator.setCaptureWorkspace(captureWorkspace)
+        context.coordinator.setProvidesCameraPreview(providesCameraPreview)
         context.coordinator.setViewMode(viewMode, on: uiView)
         context.coordinator.setRunning(isRunning, on: uiView)
         context.coordinator.setSurfaceHeatmap(
@@ -80,6 +83,7 @@ struct ARScannerView: UIViewRepresentable {
         private var hasStarted = false
         private var lastMetricsTimestamp: TimeInterval = 0
         private var lastPreviewTimestamp: TimeInterval = 0
+        private var lastCameraPreviewTimestamp: TimeInterval = 0
         private var lastPointCloudTimestamp: TimeInterval = 0
         private var lastMeshSurfaceTimestamp: TimeInterval = 0
         private var lastRGBDTimestamp: TimeInterval = 0
@@ -90,6 +94,7 @@ struct ARScannerView: UIViewRepresentable {
         private var captureQuality: CaptureQualityMode = .balanced
         private weak var rgbdRecorder: RGBDRecorder?
         private var captureWorkspace = true
+        private var providesCameraPreview = false
         private var currentViewMode: SensorViewMode = .camera
         private var initialWorldMapData: Data?
         private var lastWorldMapSaveRequestID: UUID?
@@ -131,6 +136,10 @@ struct ARScannerView: UIViewRepresentable {
 
         func setCaptureWorkspace(_ enabled: Bool) {
             captureWorkspace = enabled
+        }
+
+        func setProvidesCameraPreview(_ enabled: Bool) {
+            providesCameraPreview = enabled
         }
 
         func setRGBDRecorder(_ recorder: RGBDRecorder?) {
@@ -454,6 +463,7 @@ struct ARScannerView: UIViewRepresentable {
 
             var depthPreview: UIImage?
             var confidencePreview: UIImage?
+            var cameraPreview: UIImage?
 
             let previewInterval: TimeInterval
             switch currentViewMode {
@@ -484,6 +494,15 @@ struct ARScannerView: UIViewRepresentable {
                         from: depth.confidenceMap
                     )
                 }
+            }
+
+            if providesCameraPreview,
+               currentViewMode == .camera,
+               frame.timestamp - lastCameraPreviewTimestamp >= 0.08 {
+                lastCameraPreviewTimestamp = frame.timestamp
+                cameraPreview = LiDARFrameProcessor.cameraImage(
+                    from: frame.capturedImage
+                )
             }
 
             let transform = frame.camera.transform
@@ -578,6 +597,7 @@ struct ARScannerView: UIViewRepresentable {
                     depthStatistics: depthStatistics,
                     depthPreview: depthPreview,
                     confidencePreview: confidencePreview,
+                    cameraPreview: cameraPreview,
                     densePoints: densePoints,
                     meshSurfacePoints: meshSurfacePoints
                 )
