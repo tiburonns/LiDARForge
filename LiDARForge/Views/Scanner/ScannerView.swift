@@ -553,12 +553,17 @@ struct ScannerView: View {
                 measurementMode = false
                 showOptions = false
             } label: {
-                Label(
-                    controller.targetLocked
-                        ? "target.reselect"
-                        : "target.tapToLock",
-                    systemImage: "scope"
-                )
+                Label {
+                    Text(
+                        LocalizedStringKey(
+                            controller.targetLocked
+                                ? "target.reselect"
+                                : "target.tapToLock"
+                        )
+                    )
+                } icon: {
+                    Image(systemName: "scope")
+                }
             }
 
             if controller.targetLocked {
@@ -675,14 +680,21 @@ struct ScannerView: View {
                         startSourceArchiveIfNeeded(force: true)
                     }
                 } label: {
-                    Label(
-                        sourceRecorder.isRecording
-                            ? "source.stop"
-                            : "source.start",
-                        systemImage: sourceRecorder.isRecording
-                            ? "archivebox.fill"
-                            : "archivebox"
-                    )
+                    Label {
+                        Text(
+                            LocalizedStringKey(
+                                sourceRecorder.isRecording
+                                    ? "source.stop"
+                                    : "source.start"
+                            )
+                        )
+                    } icon: {
+                        Image(
+                            systemName: sourceRecorder.isRecording
+                                ? "archivebox.fill"
+                                : "archivebox"
+                        )
+                    }
                 }
 
             default:
