@@ -66,6 +66,8 @@ The repository contains an Xcode iOS application targeting iOS 17+ with:
 - Visual card-based home and Sensor Tools workspace
 - Minimal scanner HUD: expandable progress/status panel plus one project-aware Options sheet
 - Dedicated Sensor Tool screens with fixed purpose instead of a misleading in-tool mode picker
+- Custom cyan 3D feature dots replacing ARKit's yellow square debug markers
+- Raw Sensor Data panel with live camera pose, orientation, timestamp, tracking, depth validity, confidence, and exposure
 - Confidence visualization optimized to avoid simultaneous dense point-cloud and mesh sampling
 - Lightweight world-space coverage-gap overlay instead of the previous dense sphere heatmap
 - Pause/resume and interruption recovery without intentionally discarding the current scan
