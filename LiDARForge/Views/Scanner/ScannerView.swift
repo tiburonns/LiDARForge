@@ -10,15 +10,20 @@ struct ScannerView: View {
     @StateObject private var controller = LiDARSessionController()
     @StateObject private var rgbdRecorder = RGBDRecorder()
     @StateObject private var sourceRecorder = RGBDRecorder()
+
     @State private var stage: CaptureStage
-    @State private var viewMode: SensorViewMode = .cameraPoints
+    @State private var viewMode: SensorViewMode = .camera
     @State private var isRunning: Bool
     @State private var initialWorldMapData: Data?
+
+    @State private var showDetails = false
+    @State private var showOptions = false
+    @State private var measurementMode = false
+    @State private var targetSelectionMode = false
+    @State private var showSurfaceHeatmap = false
+
     @State private var statusMessage: String?
     @State private var exportURL: URL?
-    @State private var showHealthReport = false
-    @State private var measurementMode = false
-    @State private var showSurfaceHeatmap = true
 
     @State private var projectID = UUID()
     @State private var projectCreatedAt = Date()
@@ -44,80 +49,51 @@ struct ScannerView: View {
                 controller: controller,
                 viewMode: viewMode,
                 isRunning: isRunning,
-                allowsTargetLock: projectType == .object,
+                allowsTargetLock:
+                    projectType == .object &&
+                    targetSelectionMode,
                 measurementMode: measurementMode,
                 captureQuality: appState.captureQuality,
                 rgbdRecorder: projectType == .video
                     ? rgbdRecorder
-                    : (appState.isEnabled(.sourceArchive) ? sourceRecorder : nil),
+                    : (
+                        appState.isEnabled(.sourceArchive)
+                            ? sourceRecorder
+                            : nil
+                    ),
                 initialWorldMapData: initialWorldMapData,
                 showSurfaceHeatmap:
                     appState.isEnabled(.coverageHeatmap) &&
-                    showSurfaceHeatmap
+                    showSurfaceHeatmap,
+                captureWorkspace: true
             )
             .ignoresSafeArea()
 
-            if viewMode == .depth, let image = controller.depthPreview {
-                sensorImage(image)
-            } else if viewMode == .confidence, let image = controller.confidencePreview {
-                sensorImage(image)
-            }
+            sensorPreview
 
-            if measurementMode {
-                measurementReticle
-            } else if projectType == .object {
-                targetReticle
+            if measurementMode || targetSelectionMode {
+                interactionReticle
             }
 
             VStack(spacing: 12) {
-                header
-                coachCard
-
-                if appState.isEnabled(.coverageHeatmap),
-                   let recommendation = controller.missingViewpointRecommendation {
-                    missingViewpointCard(recommendation)
-                }
-
-                if projectType == .object, !measurementMode {
-                    targetControls
-                }
-
-                if measurementMode {
-                    measurementCard
-                }
-
-                if projectType == .video {
-                    rgbdRecorderCard
-                }
+                compactProgressPanel
 
                 Spacer()
 
-                if appState.isEnabled(.coverageHeatmap),
-                   projectType == .object,
-                   controller.targetLocked {
-                    coverageHeatmap
-                }
-
-                metrics
-                modePicker
-                controls
+                optionsButton
             }
             .padding()
         }
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showHealthReport) {
-            NavigationStack {
-                ScanHealthReportView(
-                    projectType: projectType,
-                    stage: stage,
-                    controller: controller
-                )
-            }
+        .sheet(isPresented: $showOptions) {
+            optionsSheet
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .onAppear {
             controller.configure(for: projectType)
             controller.setStage(stage)
-            showSurfaceHeatmap = appState.isEnabled(.coverageHeatmap)
+            showSurfaceHeatmap = false
 
             if let saved = existingProject?.measurements {
                 controller.restoreMeasurements(saved)
@@ -135,6 +111,11 @@ struct ScannerView: View {
         }
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
+        }
+        .onChange(of: controller.targetLocked) { _, locked in
+            if locked {
+                targetSelectionMode = false
+            }
         }
         .onChange(of: appState.enabledTools) { _, _ in
             if appState.isEnabled(.sourceArchive) {
@@ -193,321 +174,406 @@ struct ScannerView: View {
         }
     }
 
-    private func sensorImage(_ image: UIImage) -> some View {
-        Image(uiImage: image)
-            .resizable()
-            .scaledToFill()
-            .ignoresSafeArea()
-            .background(.black)
+    @ViewBuilder
+    private var sensorPreview: some View {
+        if viewMode == .depth,
+           let image = controller.depthPreview {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .background(.black)
+        } else if viewMode == .confidence,
+                  let image = controller.confidencePreview {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .ignoresSafeArea()
+                .background(.black)
+        }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(
-                    LocalizedStringKey(projectType.titleKey),
-                    systemImage: projectType.symbol
-                )
-                .font(.headline)
-
-                Spacer()
-
-                Text(LocalizedStringKey(stage.titleKey))
-                    .font(.caption.bold())
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.thinMaterial, in: Capsule())
+    private var compactProgressPanel: some View {
+        Button {
+            withAnimation(.snappy) {
+                showDetails.toggle()
             }
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: projectType.symbol)
+                        .symbolRenderingMode(.hierarchical)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(LocalizedStringKey(stage.titleKey))
+                            .font(.headline)
+
+                        Text(
+                            controller.coverage,
+                            format: .percent.precision(.fractionLength(0))
+                        )
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    if controller.recommendedReady {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+
+                    Image(
+                        systemName: showDetails
+                            ? "chevron.up"
+                            : "chevron.down"
+                    )
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                }
+
+                ProgressView(value: controller.coverage)
+
+                if showDetails {
+                    expandedProgressDetails
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .padding(14)
+            .background(
+                .ultraThinMaterial,
+                in: RoundedRectangle(cornerRadius: 20)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var expandedProgressDetails: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
 
             Text(LocalizedStringKey(stage.instructionKey))
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            ProgressView(value: controller.coverage)
-                .tint(controller.recommendedReady ? .green : .accentColor)
-        }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
-    }
-
-    private var coachCard: some View {
-        HStack(spacing: 10) {
-            Image(systemName: controller.captureGuidance.symbol)
-                .font(.headline)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("coach.title")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text(LocalizedStringKey(controller.captureGuidance.titleKey))
-                    .font(.subheadline.weight(.semibold))
-            }
-
-            Spacer()
-
-            if controller.recommendedReady {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-            }
-        }
-        .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func missingViewpointCard(
-        _ recommendation: MissingViewpointRecommendation
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack {
-                Label(
-                    "viewpoint.title",
-                    systemImage: "location.north.line.fill"
-                )
-                .font(.caption.bold())
-
-                Spacer()
-
-                Text(
-                    recommendation.coverage,
-                    format: .percent.precision(.fractionLength(0))
-                )
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-            }
-
-            Text(
-                String(
-                    format: NSLocalizedString(recommendation.directionKey, comment: ""),
-                    recommendation.azimuthDegrees
-                )
-            )
-            .font(.subheadline.weight(.semibold))
-
-            Text(LocalizedStringKey(recommendation.elevationKey))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            if !controller.surfaceCoverageCells.isEmpty {
-                HStack {
-                    Text("coverage.surface")
+            Label(
+                LocalizedStringKey(controller.captureGuidance.titleKey),
+                systemImage: controller.captureGuidance.symbol
+            )
+            .font(.caption.weight(.semibold))
+
+            if let recommendation = controller.missingViewpointRecommendation,
+               appState.isEnabled(.coverageHeatmap) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("viewpoint.title")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Spacer()
+
                     Text(
-                        controller.surfaceCoverageScore,
-                        format: .percent.precision(.fractionLength(0))
+                        String(
+                            format: NSLocalizedString(
+                                recommendation.directionKey,
+                                comment: ""
+                            ),
+                            recommendation.azimuthDegrees
+                        )
                     )
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption.weight(.semibold))
+
+                    Text(LocalizedStringKey(recommendation.elevationKey))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
-
-                ProgressView(value: controller.surfaceCoverageScore)
             }
-        }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-    }
 
-    private var targetReticle: some View {
-        VStack {
-            Spacer()
-
-            ZStack {
-                Circle()
-                    .stroke(
-                        controller.targetLocked ? Color.green : Color.white,
-                        lineWidth: 2
-                    )
-                    .frame(width: 54, height: 54)
-
-                Circle()
-                    .fill(
-                        controller.targetLocked ? Color.green : Color.white
-                    )
-                    .frame(width: 5, height: 5)
-            }
-            .shadow(radius: 2)
-
-            Spacer()
-        }
-        .allowsHitTesting(false)
-    }
-
-    private var measurementReticle: some View {
-        VStack {
-            Spacer()
-
-            ZStack {
-                Circle()
-                    .stroke(Color.blue, lineWidth: 2)
-                    .frame(width: 54, height: 54)
-
-                Image(systemName: "plus")
-                    .font(.caption.bold())
-                    .foregroundStyle(.blue)
-            }
-            .shadow(radius: 2)
-
-            Spacer()
-        }
-        .allowsHitTesting(false)
-    }
-
-    private var measurementCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label(
-                    controller.measurementDraftPointCount == 0
-                        ? "measure.tapFirst"
-                        : "measure.tapSecond",
-                    systemImage: "ruler"
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ],
+                spacing: 8
+            ) {
+                detailMetric(
+                    "metric.tracking",
+                    controller.trackingDescription
                 )
-                .font(.caption.bold())
 
-                Spacer()
+                detailMetric(
+                    "metric.confidence",
+                    controller.confidence?.formatted(
+                        .percent.precision(.fractionLength(0))
+                    ) ?? "—"
+                )
 
-                if !controller.measurements.isEmpty {
-                    Button("measure.clear") {
-                        controller.clearMeasurements()
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-                }
-            }
-
-            if let latest = controller.measurements.first {
-                HStack {
-                    Text("measure.latest")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Text(
-                        latest.distanceMeters.formatted(
-                            .number.precision(.fractionLength(3))
+                detailMetric(
+                    "metric.distance",
+                    controller.centerDistanceMeters.map {
+                        $0.formatted(
+                            .number.precision(.fractionLength(2))
                         ) + " m"
-                    )
-                    .font(.headline.monospacedDigit())
-                }
+                    } ?? "—"
+                )
+
+                detailMetric(
+                    "coverage.surface",
+                    controller.surfaceCoverageCells.isEmpty
+                        ? "—"
+                        : controller.surfaceCoverageScore.formatted(
+                            .percent.precision(.fractionLength(0))
+                        )
+                )
             }
 
-            if controller.measurements.count > 1 {
-                Text(
-                    String(
-                        format: String(localized: "measure.count"),
-                        controller.measurements.count
-                    )
+            if sourceRecorder.isRecording {
+                Label(
+                    "source.active",
+                    systemImage: "archivebox.fill"
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+
+            if measurementMode {
+                Label(
+                    "measure.active",
+                    systemImage: "ruler"
                 )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             }
         }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
-    private var rgbdRecorderCard: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack {
-                Label(
-                    rgbdRecorder.isRecording
-                        ? "rgbd.recording"
-                        : "rgbd.title",
-                    systemImage: rgbdRecorder.isRecording
-                        ? "record.circle.fill"
-                        : "video.badge.waveform"
-                )
+    private func detailMetric(
+        _ title: LocalizedStringKey,
+        _ value: String
+    ) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text(value)
                 .font(.caption.bold())
+                .monospacedDigit()
+                .lineLimit(1)
+        }
+        .padding(8)
+        .background(
+            .thinMaterial,
+            in: RoundedRectangle(cornerRadius: 10)
+        )
+    }
 
-                Spacer()
+    private var optionsButton: some View {
+        Button {
+            showOptions = true
+        } label: {
+            HStack(spacing: 9) {
+                Image(systemName: "slider.horizontal.3")
+                Text("scan.options")
+                    .fontWeight(.semibold)
 
-                if rgbdRecorder.isRecording {
-                    Text("\(rgbdRecorder.frameCount)")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                if measurementMode ||
+                    targetSelectionMode ||
+                    showSurfaceHeatmap ||
+                    sourceRecorder.isRecording ||
+                    rgbdRecorder.isRecording {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 7, height: 7)
                 }
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 13)
+        }
+        .buttonStyle(.borderedProminent)
+        .background(
+            .ultraThinMaterial,
+            in: Capsule()
+        )
+    }
 
-            Text(
-                rgbdRecorder.isRecording
-                    ? "rgbd.recording.subtitle"
-                    : "rgbd.subtitle"
+    private var interactionReticle: some View {
+        ZStack {
+            Circle()
+                .stroke(.white.opacity(0.9), lineWidth: 1.5)
+                .frame(width: 48, height: 48)
+
+            Image(
+                systemName: measurementMode
+                    ? "plus"
+                    : "scope"
             )
-            .font(.caption2)
-            .foregroundStyle(.secondary)
+            .font(.caption.bold())
+            .foregroundStyle(.white)
+        }
+        .shadow(radius: 3)
+        .allowsHitTesting(false)
+    }
 
-            HStack {
-                if rgbdRecorder.isRecording {
+    private var optionsSheet: some View {
+        NavigationStack {
+            List {
+                Section("scan.session") {
                     Button {
-                        rgbdRecorder.stop()
+                        isRunning.toggle()
                     } label: {
-                        Label("rgbd.stop", systemImage: "stop.fill")
+                        Label(
+                            isRunning ? "scan.pause" : "scan.resume",
+                            systemImage: isRunning
+                                ? "pause.fill"
+                                : "play.fill"
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
-                } else if rgbdRecorder.isFinalizing {
-                    ProgressView()
-                    Text("rgbd.finalizing")
-                        .font(.caption)
-                } else {
-                    Button {
-                        rgbdRecorder.start(projectID: projectID)
-                    } label: {
-                        Label("rgbd.start", systemImage: "record.circle")
-                    }
-                    .buttonStyle(.borderedProminent)
+
+                    stageAction
                 }
 
-                Spacer()
+                Section("sensor.mode") {
+                    ForEach(availableViewModes) { mode in
+                        Button {
+                            viewMode = mode
+                            showOptions = false
+                        } label: {
+                            HStack {
+                                Label(
+                                    LocalizedStringKey(mode.titleKey),
+                                    systemImage: mode.symbol
+                                )
 
-                if let packageURL = rgbdRecorder.packageURL,
-                   !rgbdRecorder.isFinalizing {
-                    ShareLink(item: packageURL) {
-                        Label("rgbd.share", systemImage: "square.and.arrow.up")
+                                Spacer()
+
+                                if viewMode == mode {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                        .foregroundStyle(.primary)
                     }
-                    .buttonStyle(.bordered)
+                }
+
+                if projectType == .object {
+                    objectOptions
+                }
+
+                Section("scan.projectTools") {
+                    projectToolRows
+                }
+
+                if projectType == .video {
+                    videoOptions
+                }
+
+                Section("quality.title") {
+                    Picker(
+                        "quality.title",
+                        selection: $appState.captureQuality
+                    ) {
+                        ForEach(CaptureQualityMode.allCases) { mode in
+                            Text(LocalizedStringKey(mode.titleKey))
+                                .tag(mode)
+                        }
+                    }
                 }
             }
-
-            if let error = rgbdRecorder.errorMessage {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            .navigationTitle("scan.options")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("common.ok") {
+                        showOptions = false
+                    }
+                }
             }
         }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
-    private var targetControls: some View {
-        VStack(spacing: 8) {
-            HStack {
+    @ViewBuilder
+    private var stageAction: some View {
+        if let next = stage.next {
+            if projectType == .object, next == .appearance {
+                NavigationLink {
+                    ObjectCaptureProjectView(projectID: projectID)
+                } label: {
+                    Label(
+                        "objectCapture.continueAppearance",
+                        systemImage: "camera.macro"
+                    )
+                }
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        persist(
+                            stage: stage,
+                            showConfirmation: false
+                        )
+                    }
+                )
+            } else {
+                Button {
+                    persist(
+                        stage: stage,
+                        showConfirmation: false
+                    )
+                    stage = next
+                    controller.reset(clearPointCloud: false)
+                    showOptions = false
+                } label: {
+                    Label(
+                        "scan.nextPass",
+                        systemImage: "arrow.right.circle.fill"
+                    )
+                }
+            }
+        } else {
+            Button {
+                persist(
+                    stage: stage,
+                    showConfirmation: true
+                )
+                showOptions = false
+            } label: {
+                Label(
+                    "scan.save",
+                    systemImage: "square.and.arrow.down"
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var objectOptions: some View {
+        Section("target.title") {
+            Button {
+                controller.clearTarget()
+                targetSelectionMode = true
+                measurementMode = false
+                showOptions = false
+            } label: {
                 Label(
                     controller.targetLocked
-                        ? "target.locked"
+                        ? "target.reselect"
                         : "target.tapToLock",
-                    systemImage: controller.targetLocked
-                        ? "scope"
-                        : "hand.tap"
+                    systemImage: "scope"
                 )
-                .font(.caption.bold())
-
-                Spacer()
-
-                if controller.targetLocked {
-                    Button("target.clear") {
-                        controller.clearTarget()
-                    }
-                    .font(.caption)
-                    .buttonStyle(.bordered)
-                }
             }
 
             if controller.targetLocked {
-                HStack(spacing: 10) {
-                    Text("target.radius")
-                        .font(.caption2)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("target.radius")
+                        Spacer()
+                        Text(
+                            controller.targetRadiusMeters.formatted(
+                                .number.precision(.fractionLength(2))
+                            ) + " m"
+                        )
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
+                    }
 
                     Slider(
                         value: Binding(
@@ -517,136 +583,154 @@ struct ScannerView: View {
                         in: 0.20...3.00,
                         step: 0.05
                     )
+                }
 
-                    Text(
-                        controller.targetRadiusMeters.formatted(
-                            .number.precision(.fractionLength(2))
-                        ) + " m"
+                Button(role: .destructive) {
+                    controller.clearTarget()
+                } label: {
+                    Label(
+                        "target.clear",
+                        systemImage: "xmark.circle"
                     )
-                    .font(.caption2.monospacedDigit())
-                    .frame(width: 52, alignment: .trailing)
                 }
             }
         }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
     }
 
-    private var coverageHeatmap: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack {
-                Label("coverage.map", systemImage: "square.grid.3x3.fill")
-                    .font(.caption.bold())
+    @ViewBuilder
+    private var projectToolRows: some View {
+        ForEach(availableCaptureTools) { tool in
+            switch tool {
+            case .measurements:
+                Button {
+                    measurementMode.toggle()
+                    targetSelectionMode = false
 
-                Spacer()
+                    if !measurementMode {
+                        controller.cancelMeasurementDraft()
+                    }
 
-                Text("coverage.directional")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-                ForEach(0..<3, id: \.self) { row in
-                    GridRow {
-                        ForEach(0..<8, id: \.self) { column in
-                            let value = controller.coverageSectors[row * 8 + column]
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(coverageColor(value))
-                                .frame(height: 12)
+                    showOptions = false
+                } label: {
+                    HStack {
+                        Label(
+                            "measure.title",
+                            systemImage: "ruler"
+                        )
+                        Spacer()
+                        if measurementMode {
+                            Image(systemName: "checkmark.circle.fill")
                         }
                     }
                 }
-            }
 
-            HStack(spacing: 12) {
-                legend(color: .red, key: "coverage.missing")
-                legend(color: .yellow, key: "coverage.partial")
-                legend(color: .green, key: "coverage.good")
-            }
-        }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-    }
+            case .scanHealth:
+                NavigationLink {
+                    ScanHealthReportView(
+                        projectType: projectType,
+                        stage: stage,
+                        controller: controller
+                    )
+                } label: {
+                    Label(
+                        "health.title",
+                        systemImage: "waveform.path.ecg"
+                    )
+                }
 
-    private func coverageColor(_ value: Double) -> Color {
-        if value >= 0.66 { return .green }
-        if value >= 0.25 { return .yellow }
-        return .red
-    }
+            case .coverageHeatmap:
+                Toggle(
+                    "coverage.show3d",
+                    isOn: $showSurfaceHeatmap
+                )
 
-    private func legend(color: Color, key: LocalizedStringKey) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(color)
-                .frame(width: 7, height: 7)
-            Text(key)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-    }
+            case .pointCloudExport:
+                Button {
+                    exportPointCloud()
+                } label: {
+                    Label(
+                        "export.ply",
+                        systemImage: "point.3.connected.trianglepath.dotted"
+                    )
+                }
+                .disabled(
+                    controller.densePointCount == 0 &&
+                    controller.accumulatedPointCount == 0
+                )
 
-    private var metrics: some View {
-        HStack(spacing: 10) {
-            metric(
-                title: "metric.coverage",
-                value: controller.coverage.formatted(.percent.precision(.fractionLength(0)))
-            )
-
-            metric(
-                title: "metric.confidence",
-                value: controller.confidence?.formatted(.percent.precision(.fractionLength(0))) ?? "—"
-            )
-
-            metric(
-                title: "metric.distance",
-                value: controller.centerDistanceMeters.map {
-                    $0.formatted(.number.precision(.fractionLength(2))) + " m"
-                } ?? "—"
-            )
-
-            metric(
-                title: "metric.speed",
-                value: controller.motionSpeed.formatted(.number.precision(.fractionLength(2))) + " m/s"
-            )
-        }
-        .padding(10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func metric(title: LocalizedStringKey, value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.caption.bold())
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var modePicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack {
-                ForEach(availableViewModes) { mode in
-                    Button {
-                        viewMode = mode
-                    } label: {
+                if let exportURL {
+                    ShareLink(item: exportURL) {
                         Label(
-                            LocalizedStringKey(mode.titleKey),
-                            systemImage: mode.symbol
-                        )
-                        .font(.caption)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(
-                            viewMode == mode ? .regularMaterial : .ultraThinMaterial,
-                            in: Capsule()
+                            "export.share",
+                            systemImage: "square.and.arrow.up"
                         )
                     }
-                    .buttonStyle(.plain)
+                }
+
+            case .sourceArchive:
+                Button {
+                    if sourceRecorder.isRecording {
+                        sourceRecorder.stop()
+                    } else {
+                        startSourceArchiveIfNeeded(force: true)
+                    }
+                } label: {
+                    Label(
+                        sourceRecorder.isRecording
+                            ? "source.stop"
+                            : "source.start",
+                        systemImage: sourceRecorder.isRecording
+                            ? "archivebox.fill"
+                            : "archivebox"
+                    )
+                }
+
+            default:
+                EmptyView()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var videoOptions: some View {
+        Section("rgbd.title") {
+            if rgbdRecorder.isRecording {
+                LabeledContent("rgbd.recording") {
+                    Text(rgbdRecorder.frameCount.formatted())
+                        .monospacedDigit()
+                }
+
+                Button {
+                    rgbdRecorder.stop()
+                } label: {
+                    Label(
+                        "rgbd.stop",
+                        systemImage: "stop.fill"
+                    )
+                }
+            } else if rgbdRecorder.isFinalizing {
+                HStack {
+                    ProgressView()
+                    Text("rgbd.finalizing")
+                }
+            } else {
+                Button {
+                    rgbdRecorder.start(projectID: projectID)
+                } label: {
+                    Label(
+                        "rgbd.start",
+                        systemImage: "record.circle"
+                    )
+                }
+            }
+
+            if let packageURL = rgbdRecorder.packageURL,
+               !rgbdRecorder.isFinalizing {
+                ShareLink(item: packageURL) {
+                    Label(
+                        "rgbd.share",
+                        systemImage: "square.and.arrow.up"
+                    )
                 }
             }
         }
@@ -674,172 +758,16 @@ struct ScannerView: View {
         return modes
     }
 
-    private var controls: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Button {
-                    isRunning.toggle()
-                } label: {
-                    Label(
-                        isRunning ? "scan.pause" : "scan.resume",
-                        systemImage: isRunning ? "pause.fill" : "play.fill"
-                    )
-                }
-                .buttonStyle(.borderedProminent)
-
-                if let next = stage.next {
-                    if projectType == .object, next == .appearance {
-                        NavigationLink {
-                            ObjectCaptureProjectView(projectID: projectID)
-                        } label: {
-                            Label(
-                                "objectCapture.continueAppearance",
-                                systemImage: "camera.macro"
-                            )
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .simultaneousGesture(
-                            TapGesture().onEnded {
-                                persist(
-                                    stage: stage,
-                                    showConfirmation: false
-                                )
-                            }
-                        )
-                    } else {
-                        Button {
-                            persist(stage: stage, showConfirmation: false)
-                            stage = next
-                            controller.reset(clearPointCloud: false)
-                        } label: {
-                            Label("scan.nextPass", systemImage: "arrow.right")
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                } else {
-                    Button {
-                        persist(
-                            stage: stage,
-                            showConfirmation: true,
-                            presentHealthReport: true
-                        )
-                    } label: {
-                        Label("scan.save", systemImage: "square.and.arrow.down")
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack {
-                    ForEach(availableCaptureTools) { tool in
-                        captureToolControl(tool)
-                    }
-
-                    if let exportURL,
-                       appState.isEnabled(.pointCloudExport) {
-                        ShareLink(item: exportURL) {
-                            Label(
-                                "export.share",
-                                systemImage: "square.and.arrow.up"
-                            )
-                        }
-                        .buttonStyle(.bordered)
-                    }
-                }
-            }
-        }
-    }
-
     private var availableCaptureTools: [WorkspaceTool] {
         appState.captureTools.filter { tool in
             guard appState.isEnabled(tool) else { return false }
 
-            if tool == .sourceArchive, projectType == .video {
+            if tool == .sourceArchive,
+               projectType == .video {
                 return false
             }
 
             return true
-        }
-    }
-
-    @ViewBuilder
-    private func captureToolControl(_ tool: WorkspaceTool) -> some View {
-        switch tool {
-        case .measurements:
-            Button {
-                measurementMode.toggle()
-                if !measurementMode {
-                    controller.cancelMeasurementDraft()
-                }
-            } label: {
-                Label(
-                    measurementMode ? "measure.done" : "measure.title",
-                    systemImage: "ruler"
-                )
-            }
-            .buttonStyle(.bordered)
-
-        case .scanHealth:
-            Button {
-                showHealthReport = true
-            } label: {
-                Label(
-                    "health.title",
-                    systemImage: "waveform.path.ecg"
-                )
-            }
-            .buttonStyle(.bordered)
-
-        case .coverageHeatmap:
-            Button {
-                showSurfaceHeatmap.toggle()
-            } label: {
-                Label(
-                    showSurfaceHeatmap
-                        ? "coverage.hide3d"
-                        : "coverage.show3d",
-                    systemImage: "square.grid.3x3.fill"
-                )
-            }
-            .buttonStyle(.bordered)
-
-        case .pointCloudExport:
-            Button {
-                exportPointCloud()
-            } label: {
-                Label(
-                    "export.ply",
-                    systemImage: "point.3.connected.trianglepath.dotted"
-                )
-            }
-            .buttonStyle(.bordered)
-            .disabled(
-                controller.densePointCount == 0 &&
-                controller.accumulatedPointCount == 0
-            )
-
-        case .sourceArchive:
-            Button {
-                if sourceRecorder.isRecording {
-                    sourceRecorder.stop()
-                } else {
-                    startSourceArchiveIfNeeded(force: true)
-                }
-            } label: {
-                Label(
-                    sourceRecorder.isRecording
-                        ? "source.stop"
-                        : "source.start",
-                    systemImage: sourceRecorder.isRecording
-                        ? "archivebox.fill"
-                        : "archivebox"
-                )
-            }
-            .buttonStyle(.bordered)
-
-        default:
-            EmptyView()
         }
     }
 
@@ -853,14 +781,13 @@ struct ScannerView: View {
 
         sourceRecorder.start(
             projectID: projectID,
-            destination: .projectSources(stage: "capture")
+            destination: .projectSources(stage: stage.rawValue)
         )
     }
 
     private func persist(
         stage: CaptureStage,
-        showConfirmation: Bool,
-        presentHealthReport: Bool = false
+        showConfirmation: Bool
     ) {
         let project = ScanProject(
             id: projectID,
@@ -905,9 +832,6 @@ struct ScannerView: View {
                     if showConfirmation {
                         statusMessage = String(localized: "project.saved")
                     }
-                    if presentHealthReport {
-                        showHealthReport = true
-                    }
                 }
             } catch {
                 await MainActor.run {
@@ -934,7 +858,6 @@ struct ScannerView: View {
         }
     }
 }
-
 
 private struct ScanHealthReportView: View {
     let projectType: ProjectType
