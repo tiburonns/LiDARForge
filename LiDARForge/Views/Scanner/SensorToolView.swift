@@ -239,6 +239,13 @@ struct SensorToolView: View {
 
     private var rawInspectorDetails: some View {
         VStack(spacing: 9) {
+            Text("raw.explanation")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Divider()
+
             rawRow(
                 "raw.position",
                 String(
