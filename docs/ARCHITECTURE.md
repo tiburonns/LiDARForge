@@ -129,3 +129,22 @@ When Source Archive is enabled for a normal scan, LiDARForge records sampled RGB
 ## Privacy
 
 No cloud backend is required by the architecture. Export and sharing are explicit user actions.
+
+
+### Scanner presentation layer
+
+The capture screen intentionally keeps the live camera unobstructed. The persistent UI is limited to an expandable progress/status panel and one bottom Options control. Guidance, metrics, stage instructions, and missing-viewpoint information live inside the expandable panel. All interactive capture controls live inside the project-aware Options sheet.
+
+The Options sheet filters functions by project and device capability. Object projects expose ROI controls; Video exposes RGB-D recording; coverage and mesh functions require scene-reconstruction support; depth and confidence views require SceneDepth support.
+
+### Sensor instrument presentation
+
+Sensor Tools are dedicated instruments. Selecting Depth, Confidence, Mesh, Feature Points, Night View, or Raw opens that specific visualization. The previous second mode picker was removed because it obscured the relationship between the selected tool and what the AR view was actually rendering.
+
+### Confidence performance
+
+Confidence rendering creates only the confidence preview while the confidence view is active. It no longer generates depth and confidence preview images together. In the capture workspace, dense SceneDepth point accumulation and mesh-surface sampling are temporarily suspended while Confidence is selected, prioritizing UI frame rate and restoring the normal reconstruction workload when the user returns to another view.
+
+### Coverage overlay presentation
+
+The world-space coverage visualization now behaves as a gap overlay rather than a field of large markers. It renders only under-observed cells, limits the number of markers, uses smaller translucent indicators, and removes cells as coverage improves. The underlying saved coverage model is unchanged.
