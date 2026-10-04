@@ -21,8 +21,6 @@ struct SensorToolView: View {
                 max(viewport.width - 32, 1),
                 560
             )
-            let topInset = geometry.safeAreaInsets.top
-
             ZStack {
                 ARScannerView(
                     controller: controller,
@@ -69,7 +67,7 @@ struct SensorToolView: View {
                         .frame(width: hudWidth)
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, topInset + 8)
+                .padding(.top, 8)
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 10) {
@@ -85,7 +83,7 @@ struct SensorToolView: View {
                     controls
                         .frame(width: hudWidth)
                 }
-                .padding(.bottom, max(geometry.safeAreaInsets.bottom, 8))
+                .padding(.bottom, 8)
             }
         }
         .toolbar(.hidden, for: .navigationBar)
