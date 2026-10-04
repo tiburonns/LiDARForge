@@ -244,8 +244,8 @@
 "customize.measurements.subtitle" = "Mide distancias entre puntos dentro de la escena espacial.";
 "customize.scanHealth" = "Salud del escaneo";
 "customize.scanHealth.subtitle" = "Revisa calidad, profundidad válida, densidad y tracking.";
-"customize.coverageHeatmap" = "Heatmap de cobertura 3D";
-"customize.coverageHeatmap.subtitle" = "Superpone muestras rojas, amarillas y verdes sobre las superficies reconstruidas.";
+"customize.coverageHeatmap" = "Zonas faltantes 3D";
+"customize.coverageHeatmap.subtitle" = "Resalta sólo zonas débiles o faltantes; los marcadores desaparecen conforme completas la cobertura.";
 "customize.pointCloudExport" = "Exportar nube de puntos";
 "customize.pointCloudExport.subtitle" = "Exporta el mejor PLY disponible desde SceneDepth o puntos AR.";
 "customize.sourceArchive" = "Archivo de fuentes";
@@ -258,8 +258,8 @@
 "customize.raw.subtitle" = "Inspecciona tracking y overlays crudos del sensor.";
 
 "coverage.surface" = "Cobertura de superficie 3D";
-"coverage.show3d" = "Mostrar heatmap 3D";
-"coverage.hide3d" = "Ocultar heatmap 3D";
+"coverage.show3d" = "Mostrar zonas faltantes";
+"coverage.hide3d" = "Ocultar zonas faltantes";
 "viewpoint.title" = "Perspectiva faltante";
 "viewpoint.left" = "Muévete aproximadamente %d° a la izquierda alrededor de la zona faltante.";
 "viewpoint.right" = "Muévete aproximadamente %d° a la derecha alrededor de la zona faltante.";
