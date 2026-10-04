@@ -110,3 +110,27 @@ Before TestFlight:
 - tool preferences survive relaunch;
 - Fast/Balanced/Maximum all complete a 10-minute scan;
 - camera and motion permission descriptions appear correctly.
+
+## 8. Redesigned UI
+
+1. Launch the app and confirm Home uses visual cards and Quick Capture without clipping on the iPhone display.
+2. Open Sensor Tools and test every enabled tool.
+3. Confirm each selected tool stays dedicated to its purpose; there is no redundant mode picker.
+4. In a normal scan, confirm the camera is unobstructed except for the compact progress panel and bottom Options button.
+5. Expand/collapse progress details repeatedly while scanning.
+6. Open Options and verify only controls relevant to the active project and supported hardware are shown.
+7. Start Measurements or object Target selection and confirm the reticle appears only while that interaction is active.
+
+## 9. Confidence performance
+
+1. Run a Balanced scan in Camera view for 30 seconds and observe responsiveness.
+2. Switch to Confidence from Options.
+3. Confirm confidence imagery continues updating while interaction remains responsive.
+4. Confirm dense point-cloud / surface-coverage work resumes after returning to Camera or Mesh.
+5. Repeat in Maximum quality.
+6. Compare device temperature and perceived FPS with the previous build.
+
+Acceptance:
+- Confidence must not freeze navigation or the Options sheet.
+- Switching into/out of Confidence must not reset the AR session.
+- No simultaneous depth-preview generation should occur while only Confidence is visible.
