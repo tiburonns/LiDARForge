@@ -1,5 +1,9 @@
 # LiDARForge
 
+<p align="center">
+  <img src="LiDARForge/Assets.xcassets/AppIcon.appiconset/AppIcon.png" alt="Icono de la app LiDARForge" width="180">
+</p>
+
 LiDARForge es un espacio de captura espacial **local-first** para iPhone y iPad equipados con LiDAR.
 
 En lugar de ofrecer un único botón genérico de escaneo, LiDARForge organiza la captura según el **tipo de proyecto** y guía al usuario mediante tres pasadas:
