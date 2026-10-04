@@ -487,6 +487,7 @@ struct ARScannerView: UIViewRepresentable {
 
             if trackingNormal,
                captureWorkspace,
+               currentViewMode != .confidence,
                frame.timestamp - lastPointCloudTimestamp >= denseInterval,
                let depth {
                 lastPointCloudTimestamp = frame.timestamp
@@ -503,6 +504,7 @@ struct ARScannerView: UIViewRepresentable {
             var meshSurfacePoints: [SIMD3<Float>] = []
             if trackingNormal,
                captureWorkspace,
+               currentViewMode != .confidence,
                frame.timestamp - lastMeshSurfaceTimestamp >= 0.95 {
                 lastMeshSurfaceTimestamp = frame.timestamp
                 meshSurfacePoints = sampledMeshSurfacePoints(
