@@ -37,7 +37,7 @@
 "tool.confidence" = "Mapa de confianza";
 "tool.points" = "Puntos de características";
 "tool.mesh" = "Malla LiDAR";
-"tool.raw" = "Inspector crudo del sensor";
+"tool.raw" = "Datos crudos del sensor";
 
 "metric.coverage" = "Cobertura";
 "metric.confidence" = "Confianza";
@@ -255,7 +255,7 @@
 "customize.confidence.subtitle" = "Inspecciona la confianza LiDAR por píxel.";
 "customize.points.subtitle" = "Muestra puntos de características usados por AR.";
 "customize.mesh.subtitle" = "Muestra la geometría reconstruida de la escena.";
-"customize.raw.subtitle" = "Inspecciona tracking y overlays crudos del sensor.";
+"customize.raw.subtitle" = "Muestra telemetría directa de ARKit: pose, orientación, tracking, profundidad, confianza y exposición.";
 
 "coverage.surface" = "Cobertura de superficie 3D";
 "coverage.show3d" = "Mostrar zonas faltantes";
@@ -312,3 +312,9 @@
 "scan.projectTools" = "Herramientas del proyecto";
 "measure.active" = "Modo de medición activo";
 "target.reselect" = "Volver a elegir objetivo";
+
+"raw.position" = "Posición XYZ";
+"raw.orientation" = "Orientación";
+"raw.timestamp" = "Timestamp";
+"raw.validDepth" = "Profundidad válida";
+"raw.exposure" = "Exposición";
