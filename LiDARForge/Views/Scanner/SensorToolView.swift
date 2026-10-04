@@ -14,72 +14,61 @@ struct SensorToolView: View {
     @State private var showDetails = false
 
     var body: some View {
-        ZStack {
-            ARScannerView(
-                controller: controller,
-                viewMode: mode,
-                isRunning: isRunning,
-                captureQuality: appState.captureQuality,
-                captureWorkspace: false
-            )
-            .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                ARScannerView(
+                    controller: controller,
+                    viewMode: mode,
+                    isRunning: isRunning,
+                    captureQuality: appState.captureQuality,
+                    captureWorkspace: false
+                )
+                .ignoresSafeArea()
 
-            previewOverlay
-
-            VStack(spacing: 12) {
-                toolHeader
-
-                Spacer()
-
-                if showDetails {
-                    detailsCard
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                previewOverlay
+            }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                HStack {
+                    toolHeader
+                        .frame(
+                            maxWidth: min(
+                                max(geometry.size.width - 24, 280),
+                                560
+                            )
+                        )
                 }
-
-                HStack(spacing: 10) {
-                    Button {
-                        withAnimation(.snappy) {
-                            showDetails.toggle()
-                        }
-                    } label: {
-                        Label {
-                            Text(
-                                LocalizedStringKey(
-                                    showDetails
-                                        ? "tools.hideDetails"
-                                        : "tools.showDetails"
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 10) {
+                    if showDetails {
+                        detailsCard
+                            .frame(
+                                maxWidth: min(
+                                    max(geometry.size.width - 24, 280),
+                                    560
                                 )
                             )
-                        } icon: {
-                            Image(
-                                systemName: showDetails
-                                    ? "chevron.down"
-                                    : "info.circle"
+                            .transition(
+                                .move(edge: .bottom)
+                                .combined(with: .opacity)
                             )
-                        }
-                        .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
 
-                    Button {
-                        isRunning.toggle()
-                    } label: {
-                        Image(
-                            systemName: isRunning
-                                ? "pause.fill"
-                                : "play.fill"
+                    controls
+                        .frame(
+                            maxWidth: min(
+                                max(geometry.size.width - 24, 280),
+                                560
+                            )
                         )
-                        .frame(width: 42)
-                    }
-                    .buttonStyle(.borderedProminent)
                 }
-                .padding(10)
-                .background(
-                    .ultraThinMaterial,
-                    in: Capsule()
-                )
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 6)
             }
-            .padding()
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -98,6 +87,7 @@ struct SensorToolView: View {
                 .ignoresSafeArea()
                 .background(.black)
                 .colorMultiply(nightVision ? .green : .white)
+                .allowsHitTesting(false)
         } else if mode == .confidence,
                   let image = controller.confidencePreview {
             Image(uiImage: image)
@@ -105,7 +95,53 @@ struct SensorToolView: View {
                 .scaledToFill()
                 .ignoresSafeArea()
                 .background(.black)
+                .allowsHitTesting(false)
         }
+    }
+
+    private var controls: some View {
+        HStack(spacing: 10) {
+            Button {
+                withAnimation(.snappy) {
+                    showDetails.toggle()
+                }
+            } label: {
+                Label {
+                    Text(
+                        LocalizedStringKey(
+                            showDetails
+                                ? "tools.hideDetails"
+                                : "tools.showDetails"
+                        )
+                    )
+                } icon: {
+                    Image(
+                        systemName: showDetails
+                            ? "chevron.down"
+                            : "info.circle"
+                    )
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+
+            Button {
+                isRunning.toggle()
+            } label: {
+                Image(
+                    systemName: isRunning
+                        ? "pause.fill"
+                        : "play.fill"
+                )
+                .frame(width: 44, height: 20)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding(10)
+        .background(
+            .ultraThinMaterial,
+            in: Capsule()
+        )
     }
 
     private var toolHeader: some View {
@@ -117,6 +153,8 @@ struct SensorToolView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(LocalizedStringKey(titleKey))
                     .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
 
                 Text(
                     LocalizedStringKey(
@@ -129,7 +167,7 @@ struct SensorToolView: View {
                 .foregroundStyle(.secondary)
             }
 
-            Spacer()
+            Spacer(minLength: 8)
 
             Circle()
                 .fill(isRunning ? Color.green : Color.secondary)
@@ -143,6 +181,24 @@ struct SensorToolView: View {
     }
 
     private var detailsCard: some View {
+        ScrollView {
+            VStack(spacing: 10) {
+                if tool == .rawInspector {
+                    rawInspectorDetails
+                } else {
+                    standardDetails
+                }
+            }
+            .padding()
+        }
+        .frame(maxHeight: 250)
+        .background(
+            .ultraThinMaterial,
+            in: RoundedRectangle(cornerRadius: 18)
+        )
+    }
+
+    private var standardDetails: some View {
         VStack(spacing: 10) {
             HStack {
                 metric(
@@ -179,11 +235,91 @@ struct SensorToolView: View {
                 }
             }
         }
-        .padding()
-        .background(
-            .ultraThinMaterial,
-            in: RoundedRectangle(cornerRadius: 18)
-        )
+    }
+
+    private var rawInspectorDetails: some View {
+        VStack(spacing: 9) {
+            rawRow(
+                "raw.position",
+                String(
+                    format: "X %.3f  Y %.3f  Z %.3f m",
+                    controller.cameraPosition.x,
+                    controller.cameraPosition.y,
+                    controller.cameraPosition.z
+                )
+            )
+
+            rawRow(
+                "raw.orientation",
+                String(
+                    format: "Yaw %.1f°  Pitch %.1f°",
+                    Double(controller.cameraYaw) * 180.0 / .pi,
+                    Double(controller.cameraPitch) * 180.0 / .pi
+                )
+            )
+
+            rawRow(
+                "raw.timestamp",
+                controller.frameTimestamp.formatted(
+                    .number.precision(.fractionLength(3))
+                ) + " s"
+            )
+
+            rawRow(
+                "metric.tracking",
+                controller.trackingDescription
+            )
+
+            rawRow(
+                "metric.points",
+                controller.featurePointCount.formatted()
+            )
+
+            rawRow(
+                "metric.mesh",
+                controller.meshAnchorCount.formatted()
+            )
+
+            rawRow(
+                "raw.validDepth",
+                controller.depthValidRatio.formatted(
+                    .percent.precision(.fractionLength(0))
+                )
+            )
+
+            rawRow(
+                "metric.confidence",
+                controller.confidence?.formatted(
+                    .percent.precision(.fractionLength(0))
+                ) ?? "—"
+            )
+
+            rawRow(
+                "raw.exposure",
+                (controller.exposureDurationSeconds * 1000)
+                    .formatted(
+                        .number.precision(.fractionLength(1))
+                    ) + " ms"
+            )
+        }
+    }
+
+    private func rawRow(
+        _ title: LocalizedStringKey,
+        _ value: String
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Text(value)
+                .font(.caption.monospaced())
+                .multilineTextAlignment(.trailing)
+                .textSelection(.enabled)
+        }
     }
 
     private func metric(
