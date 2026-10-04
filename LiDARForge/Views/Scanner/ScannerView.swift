@@ -763,13 +763,16 @@ struct ScannerView: View {
         if appState.isEnabled(.featurePoints) {
             modes.append(.cameraPoints)
         }
-        if appState.isEnabled(.meshView) {
+        if appState.isEnabled(.meshView),
+           controller.supportsMesh {
             modes.append(.mesh)
         }
-        if appState.isEnabled(.depthView) {
+        if appState.isEnabled(.depthView),
+           controller.supportsDepth {
             modes.append(.depth)
         }
-        if appState.isEnabled(.confidenceView) {
+        if appState.isEnabled(.confidenceView),
+           controller.supportsDepth {
             modes.append(.confidence)
         }
         if appState.isEnabled(.rawInspector) {
@@ -783,12 +786,25 @@ struct ScannerView: View {
         appState.captureTools.filter { tool in
             guard appState.isEnabled(tool) else { return false }
 
-            if tool == .sourceArchive,
-               projectType == .video {
+            switch tool {
+            case .measurements:
+                return projectType != .video
+
+            case .scanHealth:
+                return true
+
+            case .coverageHeatmap:
+                return projectType != .video && controller.supportsMesh
+
+            case .pointCloudExport:
+                return projectType != .video
+
+            case .sourceArchive:
+                return projectType != .video
+
+            default:
                 return false
             }
-
-            return true
         }
     }
 
