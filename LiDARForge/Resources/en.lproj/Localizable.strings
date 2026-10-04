@@ -29,7 +29,7 @@
 "sensor.mesh" = "Mesh";
 "sensor.depth" = "Depth";
 "sensor.confidence" = "Confidence";
-"sensor.raw" = "Raw";
+"sensor.raw" = "Inspector";
 "sensor.mode" = "Sensor view";
 
 "tool.nightVision" = "LiDAR Night View";
@@ -37,7 +37,7 @@
 "tool.confidence" = "Confidence Map";
 "tool.points" = "Feature Points";
 "tool.mesh" = "LiDAR Mesh";
-"tool.raw" = "Raw Sensor Data";
+"tool.raw" = "Sensor Inspector";
 
 "metric.coverage" = "Coverage";
 "metric.confidence" = "Confidence";
@@ -255,7 +255,7 @@
 "customize.confidence.subtitle" = "Inspect per-pixel LiDAR confidence.";
 "customize.points.subtitle" = "Show AR tracking feature points.";
 "customize.mesh.subtitle" = "Show reconstructed scene geometry.";
-"customize.raw.subtitle" = "Show direct ARKit telemetry: pose, orientation, tracking, depth, confidence, and exposure.";
+"customize.raw.subtitle" = "Inspect live ARKit telemetry: pose, orientation, tracking, depth, confidence, and exposure.";
 
 "coverage.surface" = "3D surface coverage";
 "coverage.show3d" = "Show Coverage Gaps";
@@ -319,4 +319,4 @@
 "raw.validDepth" = "Valid depth";
 "raw.exposure" = "Exposure";
 
-"raw.explanation" = "These are direct values ARKit uses before LiDARForge turns them into guidance, metrics, or models. They are useful for diagnostics, calibration, and development.";
+"raw.explanation" = "Technical ARKit inspector. It shows the values LiDARForge receives before turning them into guidance, metrics, or models. Use it for diagnostics, calibration, and development.";
