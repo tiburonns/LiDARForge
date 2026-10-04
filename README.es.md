@@ -66,6 +66,8 @@ El repositorio contiene una aplicación iOS para Xcode con iOS 17+:
 - Inicio y Herramientas del sensor rediseñados con tarjetas visuales
 - HUD mínimo durante el escaneo: progreso/desplegable superior y una sola hoja de Opciones contextual al proyecto
 - Herramientas del sensor dedicadas, sin selector de modo redundante dentro de cada herramienta
+- Puntos 3D cian personalizados en lugar de los cuadrados amarillos de depuración de ARKit
+- Datos crudos del sensor con pose, orientación, timestamp, tracking, profundidad válida, confianza y exposición
 - Vista de Confianza optimizada para evitar muestreo simultáneo pesado de nube densa y malla
 - Overlay ligero de zonas de cobertura faltante en lugar del heatmap anterior saturado de esferas
 - Recuperación de pausa/reanudación e interrupciones sin descartar intencionalmente el escaneo actual
