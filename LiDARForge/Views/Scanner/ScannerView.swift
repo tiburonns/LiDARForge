@@ -15,6 +15,7 @@ struct ScannerView: View {
     @State private var viewMode: SensorViewMode = .camera
     @State private var isRunning: Bool
     @State private var initialWorldMapData: Data?
+    @State private var sessionRefreshID: UUID?
 
     @State private var showDetails = false
     @State private var showOptions = false
@@ -44,45 +45,67 @@ struct ScannerView: View {
     }
 
     var body: some View {
-        ZStack {
-            ARScannerView(
-                controller: controller,
-                viewMode: viewMode,
-                isRunning: isRunning,
-                allowsTargetLock:
-                    projectType == .object &&
-                    targetSelectionMode,
-                measurementMode: measurementMode,
-                captureQuality: appState.captureQuality,
-                rgbdRecorder: projectType == .video
-                    ? rgbdRecorder
-                    : (
-                        appState.isEnabled(.sourceArchive)
-                            ? sourceRecorder
-                            : nil
-                    ),
-                initialWorldMapData: initialWorldMapData,
-                showSurfaceHeatmap:
-                    appState.isEnabled(.coverageHeatmap) &&
-                    showSurfaceHeatmap,
-                captureWorkspace: true
-            )
-            .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                ARScannerView(
+                    controller: controller,
+                    viewMode: viewMode,
+                    isRunning: isRunning,
+                    allowsTargetLock:
+                        projectType == .object &&
+                        targetSelectionMode,
+                    measurementMode: measurementMode,
+                    captureQuality: appState.captureQuality,
+                    rgbdRecorder: projectType == .video
+                        ? rgbdRecorder
+                        : (
+                            appState.isEnabled(.sourceArchive)
+                                ? sourceRecorder
+                                : nil
+                        ),
+                    initialWorldMapData: initialWorldMapData,
+                    showSurfaceHeatmap:
+                        appState.isEnabled(.coverageHeatmap) &&
+                        showSurfaceHeatmap,
+                    captureWorkspace: true,
+                    sessionRefreshID: sessionRefreshID
+                )
+                .ignoresSafeArea()
 
-            sensorPreview
+                sensorPreview
 
-            if measurementMode || targetSelectionMode {
-                interactionReticle
+                if measurementMode || targetSelectionMode {
+                    interactionReticle
+                }
             }
-
-            VStack(spacing: 12) {
-                compactProgressPanel
-
-                Spacer()
-
-                optionsButton
+            .safeAreaInset(edge: .top, spacing: 0) {
+                HStack {
+                    compactProgressPanel
+                        .frame(
+                            maxWidth: min(
+                                max(geometry.size.width - 24, 280),
+                                560
+                            )
+                        )
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
             }
-            .padding()
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HStack {
+                    optionsButton
+                        .frame(
+                            maxWidth: min(
+                                max(geometry.size.width - 24, 280),
+                                560
+                            )
+                        )
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 6)
+            }
         }
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showOptions) {
@@ -149,6 +172,7 @@ struct ScannerView: View {
                 projectID: existingProject.id
             )
             isRunning = true
+            sessionRefreshID = UUID()
         }
         .onDisappear {
             isRunning = false
@@ -529,6 +553,7 @@ struct ScannerView: View {
                     )
                     stage = next
                     controller.reset(clearPointCloud: false)
+                    sessionRefreshID = UUID()
                     showOptions = false
                 } label: {
                     Label(
