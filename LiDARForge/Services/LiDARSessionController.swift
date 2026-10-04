@@ -132,6 +132,10 @@ final class LiDARSessionController: ObservableObject {
     @Published private(set) var measurementDraftPointCount = 0
     @Published private(set) var exposureDurationSeconds: Double = 0
     @Published private(set) var exposureOffset: Float = 0
+    @Published private(set) var cameraPosition = SIMD3<Float>.zero
+    @Published private(set) var cameraYaw: Float = 0
+    @Published private(set) var cameraPitch: Float = 0
+    @Published private(set) var frameTimestamp: TimeInterval = 0
     @Published private(set) var worldMapData: Data?
     @Published private(set) var worldMapSaveRequestID: UUID?
     @Published private(set) var supportsDepth = ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth)
@@ -325,6 +329,10 @@ final class LiDARSessionController: ObservableObject {
         confidencePreview = nil
         captureGuidance = .initializing
         motionSpeed = 0
+        cameraPosition = .zero
+        cameraYaw = 0
+        cameraPitch = 0
+        frameTimestamp = 0
         isInterrupted = false
         sessionError = nil
         recommendedReady = false
@@ -395,6 +403,10 @@ final class LiDARSessionController: ObservableObject {
         self.confidence = confidence
         exposureDurationSeconds = exposureDuration
         self.exposureOffset = exposureOffset
+        self.cameraPosition = cameraPosition
+        cameraYaw = yaw
+        cameraPitch = pitch
+        frameTimestamp = timestamp
         centerDistanceMeters = depthStatistics.centerDistance
         depthValidRatio = depthStatistics.validRatio
 
