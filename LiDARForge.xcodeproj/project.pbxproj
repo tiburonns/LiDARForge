@@ -28,6 +28,8 @@
 		A10000000000000000000013 /* RGBDRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000016 /* RGBDRecorder.swift */; };
 		A10000000000000000000014 /* ObjectCaptureProjectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000017 /* ObjectCaptureProjectView.swift */; };
 		A10000000000000000000015 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000018 /* Assets.xcassets */; };
+		A10000000000000000000016 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000019 /* PrivacyInfo.xcprivacy */; };
+		A10000000000000000000017 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000002 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +57,9 @@
 		B10000000000000000000016 /* RGBDRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Services/RGBDRecorder.swift; sourceTree = "<group>"; };
 		B10000000000000000000017 /* ObjectCaptureProjectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiDARForge/Views/ObjectCaptureProjectView.swift; sourceTree = "<group>"; };
 		B10000000000000000000018 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = LiDARForge/Assets.xcassets; sourceTree = "<group>"; };
+		B10000000000000000000019 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = LiDARForge/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B1000000000000000000001A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = LiDARForge/Resources/en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		B1000000000000000000001B /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = LiDARForge/Resources/es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,8 +96,10 @@
 				B1000000000000000000000D /* ScannerView.swift */,
 				B1000000000000000000000E /* SensorToolView.swift */,
 				B10000000000000000000018 /* Assets.xcassets */,
+				B10000000000000000000019 /* PrivacyInfo.xcprivacy */,
 				B1000000000000000000000F /* Info.plist */,
 				D10000000000000000000001 /* Localizable.strings */,
+				D10000000000000000000002 /* InfoPlist.strings */,
 				C10000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -165,7 +172,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000015 /* Assets.xcassets in Resources */,
+				A10000000000000000000016 /* PrivacyInfo.xcprivacy in Resources */,
 				A1000000000000000000000F /* Localizable.strings in Resources */,
+				A10000000000000000000017 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -208,6 +217,15 @@
 				B10000000000000000000011 /* es */,
 			);
 			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+		D10000000000000000000002 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B1000000000000000000001A /* en */,
+				B1000000000000000000001B /* es */,
+			);
+			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
