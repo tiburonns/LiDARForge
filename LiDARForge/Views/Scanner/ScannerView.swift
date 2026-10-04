@@ -15,7 +15,6 @@ struct ScannerView: View {
     @State private var viewMode: SensorViewMode = .camera
     @State private var isRunning: Bool
     @State private var initialWorldMapData: Data?
-    @State private var sessionRefreshID: UUID?
 
     @State private var showDetails = false
     @State private var showOptions = false
@@ -67,8 +66,7 @@ struct ScannerView: View {
                     showSurfaceHeatmap:
                         appState.isEnabled(.coverageHeatmap) &&
                         showSurfaceHeatmap,
-                    captureWorkspace: true,
-                    sessionRefreshID: sessionRefreshID
+                    captureWorkspace: true
                 )
                 .ignoresSafeArea()
 
@@ -134,14 +132,14 @@ struct ScannerView: View {
         }
         .onChange(of: stage) { _, newStage in
             controller.setStage(newStage)
-            sessionRefreshID = UUID()
-        }
-        .onChange(of: showOptions) { wasPresented, isPresented in
-            if wasPresented,
-               !isPresented,
-               isRunning {
-                sessionRefreshID = UUID()
-            }
+
+            // Changing Structure → Detail → Appearance must not restart ARKit.
+            // Return to the normal camera presentation while preserving
+            // the same ARSession, world tracking, anchors, and camera feed.
+            viewMode = .camera
+            showSurfaceHeatmap = false
+            measurementMode = false
+            targetSelectionMode = false
         }
         .onChange(of: controller.targetLocked) { _, locked in
             if locked {
@@ -180,7 +178,6 @@ struct ScannerView: View {
                 projectID: existingProject.id
             )
             isRunning = true
-            sessionRefreshID = UUID()
         }
         .onDisappear {
             isRunning = false
@@ -576,7 +573,10 @@ struct ScannerView: View {
                     )
                     stage = next
                     controller.reset(clearPointCloud: false)
-                    sessionRefreshID = UUID()
+                    viewMode = .camera
+                    showSurfaceHeatmap = false
+                    measurementMode = false
+                    targetSelectionMode = false
                     showOptions = false
                 } label: {
                     Label(
