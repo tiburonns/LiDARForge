@@ -42,14 +42,21 @@ struct SensorToolView: View {
                             showDetails.toggle()
                         }
                     } label: {
-                        Label(
-                            showDetails
-                                ? "tools.hideDetails"
-                                : "tools.showDetails",
-                            systemImage: showDetails
-                                ? "chevron.down"
-                                : "info.circle"
-                        )
+                        Label {
+                            Text(
+                                LocalizedStringKey(
+                                    showDetails
+                                        ? "tools.hideDetails"
+                                        : "tools.showDetails"
+                                )
+                            )
+                        } icon: {
+                            Image(
+                                systemName: showDetails
+                                    ? "chevron.down"
+                                    : "info.circle"
+                            )
+                        }
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
@@ -112,9 +119,11 @@ struct SensorToolView: View {
                     .font(.headline)
 
                 Text(
-                    isRunning
-                        ? "tools.live"
-                        : "tools.paused"
+                    LocalizedStringKey(
+                        isRunning
+                            ? "tools.live"
+                            : "tools.paused"
+                    )
                 )
                 .font(.caption2)
                 .foregroundStyle(.secondary)
