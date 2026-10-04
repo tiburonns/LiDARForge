@@ -1,7 +1,7 @@
 name: iOS Build
 
 permissions:
-  contents: read
+  contents: write
   statuses: write
 
 on:
@@ -21,7 +21,6 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer || true
 
       - name: Build
-        id: build
         shell: bash
         run: |
           set +e
@@ -33,36 +32,34 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build 2>&1 | tee build.log
           status=${PIPESTATUS[0]}
+          echo "$status" > .build_status
+          exit 0
 
-          {
-            echo "### Build diagnostics"
-            echo
-            echo '```text'
-            grep -E "error:|warning:" build.log | tail -n 120 || true
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          exit "$status"
-
-      - name: Publish build diagnostic
-        if: failure()
+      - name: Publish build diagnostics
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          diagnostic=$(grep -m1 -E "error:" build.log | sed -E 's/^[^:]+:[0-9]+:[0-9]+: error: //' | tr '\n' ' ' | cut -c1-130)
-          if [ -z "$diagnostic" ]; then
-            diagnostic="Xcode build failed; inspect workflow logs."
+          status=$(cat .build_status 2>/dev/null || echo 1)
+          if [ "$status" != "0" ]; then
+            diagnostic=$(grep -E "error:|warning:" build.log | tail -n 40 || true)
+            body=$(printf '### Xcode diagnostics\n```text\n%s\n```' "$diagnostic")
+            gh api --method POST \
+              "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" \
+              -f body="$body" || true
           fi
-          gh api --method POST \
-            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
-            -f state=failure \
-            -f context="xcode-diagnostic" \
-            -f description="$diagnostic"
 
       - name: Static Analyze
         shell: bash
         run: |
+          status=$(cat .build_status 2>/dev/null || echo 1)
+          if [ "$status" != "0" ]; then
+            echo "Skipping analyze because build failed."
+            echo "1" > .analyze_status
+            exit 0
+          fi
+
           set +e
           xcodebuild \
             -project LiDARForge.xcodeproj \
@@ -71,17 +68,9 @@ jobs:
             -configuration Debug \
             CODE_SIGNING_ALLOWED=NO \
             analyze 2>&1 | tee analyze.log
-          status=${PIPESTATUS[0]}
-
-          {
-            echo "### Static-analysis diagnostics"
-            echo
-            echo '```text'
-            grep -E "error:|warning:" analyze.log | tail -n 120 || true
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          exit "$status"
+          analyze_status=${PIPESTATUS[0]}
+          echo "$analyze_status" > .analyze_status
+          exit 0
 
       - name: Upload Xcode diagnostics
         if: always()
@@ -91,5 +80,17 @@ jobs:
           path: |
             build.log
             analyze.log
+            .build_status
+            .analyze_status
           if-no-files-found: ignore
           retention-days: 3
+
+      - name: Enforce result
+        if: always()
+        shell: bash
+        run: |
+          build_status=$(cat .build_status 2>/dev/null || echo 1)
+          analyze_status=$(cat .analyze_status 2>/dev/null || echo 0)
+          if [ "$build_status" != "0" ] || [ "$analyze_status" != "0" ]; then
+            exit 1
+          fi
