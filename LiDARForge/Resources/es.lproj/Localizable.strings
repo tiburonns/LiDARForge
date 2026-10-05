@@ -320,3 +320,5 @@
 "raw.exposure" = "Exposición";
 
 "raw.explanation" = "Inspector técnico de ARKit. Muestra los valores que LiDARForge recibe antes de convertirlos en guías, métricas o modelos. Úsalo para diagnóstico, calibración y desarrollo.";
+"settings.support" = "Soporte y feedback";
+"settings.patreon" = "Apoyar en Patreon";
