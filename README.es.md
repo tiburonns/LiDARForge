@@ -93,6 +93,12 @@ Al abrir un paquete `.lidarforge` compartido, iOS lo envía de nuevo a LiDARForg
 
 Consulta [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) y [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md).
 
+## Contacto y feedback
+
+Las dudas, sugerencias, reportes de errores y feedback general pueden prepararse desde **Ajustes → Soporte**. LiDARForge usa actualmente los GitHub Issues de este repositorio; como el repositorio es privado, ese canal sólo funciona para colaboradores por ahora.
+
+Antes de una distribución pública mediante TestFlight/App Store, esta acción de soporte deberá redirigirse a un canal público. No incluyas escaneos, ubicaciones precisas, datos privados de proyectos, credenciales ni otra información sensible.
+
 ## Privacidad
 
 La arquitectura es **local-first**. Los frames del sensor y los proyectos permanecen en el dispositivo hasta que el usuario decide exportarlos o compartirlos.
