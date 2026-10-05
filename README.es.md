@@ -106,3 +106,14 @@ La arquitectura es **local-first**. Los frames del sensor y los proyectos perman
 ## Licencia
 
 MIT — consulta [LICENSE](LICENSE).
+
+## Contacto, soporte y feedback
+
+¿Tienes una **duda**, **sugerencia**, encontraste un **error** o quieres compartir **feedback** sobre LiDARForge? Usa el formulario de GitHub Issues del proyecto:
+
+**[Abrir formulario de contacto y feedback](https://github.com/tiburonns/LiDARForge/issues/new?template=feedback.yml)**
+
+Selecciona la categoría que mejor corresponda: **Duda, Sugerencia, Error, Feedback, Compatibilidad u Otro**. Incluye la versión de la app, dispositivo/sistema y pasos para reproducir el problema cuando aplique.
+
+No publiques contraseñas, tokens, claves, direcciones privadas ni otra información personal sensible. Para vulnerabilidades de seguridad, utiliza el proceso indicado en `SECURITY.md` cuando esté disponible.
+
