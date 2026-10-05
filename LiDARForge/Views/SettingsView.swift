@@ -44,6 +44,14 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section {
+                Link(
+                    destination: URL(string: "https://github.com/tiburonns/LiDARForge/issues/new?template=feedback.yml")!
+                ) {
+                    Label("Support & feedback / Soporte y feedback", systemImage: "questionmark.bubble")
+                }
+            }
+
             Section("settings.about") {
                 LabeledContent("settings.version", value: "0.2.0")
                 LabeledContent(
