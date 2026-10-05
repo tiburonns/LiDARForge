@@ -93,6 +93,12 @@ Opening a shared `.lidarforge` package routes it back into LiDARForge, imports t
 
 See [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/DEVICE_TEST_PLAN.md](docs/DEVICE_TEST_PLAN.md).
 
+## Contact and feedback
+
+Questions, suggestions, bug reports, and general feedback can be prepared from **Settings → Support**. LiDARForge currently uses this repository's GitHub Issues endpoint; because the repository is private, that route is available only to collaborators at this stage.
+
+Before public TestFlight/App Store distribution, this support action should be redirected to a public support endpoint. Do not include scans, precise locations, private project data, credentials, or other sensitive information.
+
 ## Privacy
 
 The architecture is **local-first**. Sensor frames and project data remain on-device unless the user explicitly exports or shares them.
