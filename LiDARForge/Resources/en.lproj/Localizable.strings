@@ -320,3 +320,19 @@
 "raw.exposure" = "Exposure";
 
 "raw.explanation" = "Technical ARKit inspector. It shows the values LiDARForge receives before turning them into guidance, metrics, or models. Use it for diagnostics, calibration, and development.";
+
+"support.title" = "Support";
+"support.feedback" = "Questions, suggestions and feedback";
+"support.issues" = "Open GitHub Issues";
+"support.privateRepo" = "This repository is currently private. GitHub Issues are available only to collaborators until a public support endpoint is configured.";
+"feedback.title" = "Feedback";
+"feedback.type" = "Type";
+"feedback.category" = "Category";
+"feedback.category.question" = "Question";
+"feedback.category.suggestion" = "Suggestion";
+"feedback.category.bug" = "Bug / Error";
+"feedback.category.feedback" = "General feedback";
+"feedback.message" = "Message";
+"feedback.privacy" = "Do not include scans, precise locations, private project data, credentials, or other sensitive information.";
+"feedback.send" = "Open in GitHub";
+"feedback.review" = "GitHub will open so you can review and publish the report yourself.";
