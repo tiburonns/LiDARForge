@@ -50,6 +50,9 @@ struct SettingsView: View {
                 ) {
                     Label("Support & feedback / Soporte y feedback", systemImage: "questionmark.bubble")
                 }
+                Link(destination: URL(string: "https://www.patreon.com/tiburonns")!) {
+                    Label("Support on Patreon / Apoyar en Patreon", systemImage: "heart.fill")
+                }
             }
 
             Section("settings.about") {
