@@ -23,10 +23,10 @@ jobs:
           zip -qry LiDARForge.ipa Payload
       - name: Publish GitHub Release
         env:
-          GH_TOKEN: ${${ github.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           VERSION=$(xcodebuild -project LiDARForge.xcodeproj -scheme LiDARForge -configuration Release -sdk iphoneos -showBuildSettings | awk -F' = ' '/MARKETING_VERSION/{print $2; exit}')
           BUILD=$(xcodebuild -project LiDARForge.xcodeproj -scheme LiDARForge -configuration Release -sdk iphoneos -showBuildSettings | awk -F' = ' '/CURRENT_PROJECT_VERSION/{print $2; exit}')
-          TAG="altstore-$VERSION-$BUILD-${${ github.run_number }}"
-          gh release create "$TAG" "$RUNNER_TEMP/LiDARForge.ipa" --target "${${ github.sha }}" --title "LiDARForge $VERSION ($BUILD)" --generate-notes
+          TAG="altstore-$VERSION-$BUILD-$GITHUB_RUN_NUMBER"
+          gh release create "$TAG" "$RUNNER_TEMP/LiDARForge.ipa" --target "$GITHUB_SHA" --title "LiDARForge $VERSION ($BUILD)" --generate-notes
