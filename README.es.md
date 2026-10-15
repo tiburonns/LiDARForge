@@ -97,6 +97,10 @@ Consulta [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITE
 
 La arquitectura es **local-first**. Los frames del sensor y los proyectos permanecen en el dispositivo hasta que el usuario decide exportarlos o compartirlos.
 
+### Comentarios
+
+Abre **Ajustes → Errores, comentarios y sugerencias** para preparar un reporte. LiDARForge abre un borrador de correo dirigido al desarrollador; revísalo y envíalo tú. No se adjuntan frames del sensor ni proyectos.
+
 ## Idiomas
 
 - Español
