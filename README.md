@@ -97,6 +97,10 @@ See [docs/ROADMAP.md](docs/ROADMAP.md), [docs/ARCHITECTURE.md](docs/ARCHITECTURE
 
 The architecture is **local-first**. Sensor frames and project data remain on-device unless the user explicitly exports or shares them.
 
+### Feedback
+
+Open **Settings → Bugs, comments & suggestions** to prepare a report. LiDARForge opens an addressed email draft; review and send it yourself. Sensor frames and project data are not attached.
+
 ## Languages
 
 - English

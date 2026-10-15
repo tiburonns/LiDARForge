@@ -3,6 +3,15 @@
 "home.tools" = "Herramientas";
 "home.sensorTools" = "Herramientas del sensor";
 "home.settings" = "Ajustes";
+"feedback.title" = "Errores, comentarios y sugerencias";
+"feedback.category" = "Categoría";
+"feedback.message" = "Mensaje";
+"feedback.send" = "Continuar en correo";
+"feedback.emailDraft" = "Tu app de correo abre un borrador. Revísalo y envíalo desde allí.";
+"feedback.bug" = "Error";
+"feedback.comment" = "Comentario";
+"feedback.suggestion" = "Sugerencia";
+"feedback.other" = "Otro";
 
 "lidar.unsupported" = "Este dispositivo no reporta compatibilidad con Scene Depth LiDAR. Las herramientas del sensor estarán limitadas.";
 

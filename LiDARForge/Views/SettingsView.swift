@@ -2,6 +2,9 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
+    @Environment(\.openURL) private var openURL
+    @State private var feedbackCategory = "feedback.suggestion"
+    @State private var feedbackMessage = ""
 
     var body: some View {
         Form {
@@ -51,8 +54,36 @@ struct SettingsView: View {
                     value: String(localized: "settings.localFirst")
                 )
             }
+
+            Section("feedback.title") {
+                Picker("feedback.category", selection: $feedbackCategory) {
+                    ForEach(["feedback.bug", "feedback.comment", "feedback.suggestion", "feedback.other"], id: \.self) {
+                        Text(LocalizedStringKey($0))
+                    }
+                }
+                TextField("feedback.message", text: $feedbackMessage, axis: .vertical)
+                    .lineLimit(4...8)
+                Button("feedback.send", action: sendFeedback)
+                    .disabled(feedbackMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Text("feedback.emailDraft")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         }
         .navigationTitle("settings.title")
+    }
+
+    private func sendFeedback() {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = "tiburonns@icloud.com"
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "[LiDARForge] [\(String(localized: String.LocalizationValue(feedbackCategory)))]"),
+            URLQueryItem(name: "body", value: "\(feedbackMessage)\n\nLiDARForge \(version) (\(build))")
+        ]
+        if let url = components.url { openURL(url) }
     }
 }
 
